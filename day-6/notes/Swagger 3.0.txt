@@ -1,0 +1,96 @@
+=======================================================================
+Implementing the OpenAPI 3 specification for documenting the REST API's
+=======================================================================
+
+Swagger (now largely referred to as OpenAPI Specification, with Swagger being a set of tools that implement it) provides a standardized, language-agnostic interface for describing RESTful APIs. When integrated with Spring Boot, it allows for automatic generation of interactive API documentation and facilitates testing
+
+
+
+<dependency>
+ <groupId>org.springdoc</groupId>
+ <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+ <version>3.0.2</version>
+</dependency>
+
+
+http://localhost:8080/swagger-ui.html
+
+=================================================
+
+
+@SpringBootApplication
+@OpenAPIDefinition(info = @Info(title = "IRCTC TICKET APP", 
+			        version = "2.0", 
+				description = "Ticket Booking Application",
+			contact = @Contact(name = "Sunil Joseph", email = "sunil.j@example.com")))
+
+on each rest controller
+
+@Tag(name = "Ticket Booking Controller", description = "New Booking, Search, Cancel, Reschedule Ticket")
+public class TicketRestController {
+
+===================================================================================================
+------- documentations ---------------
+openapis.org
+springdoc.org   -- getting started
+
+dependency - springdoc-openapi-starter-webmvc-ui   - 3.0.0
+
+http://localhost:8080/swagger-ui.html
+
+1) enhancing documentation of REST APIs using @OpenAPIDefinition
+-- bootstrap class @SpringBootApplication
+
+@OpenAPIDefinition(info = @Info(title = "IRCTC TICKET APP", 
+		                description = "Ticket Booking Application",
+		                version = "v2", 
+		                contact = @Contact(
+		   			name = "Sunil Joseph", 
+		   			email = "sunil.j@example.com",
+		   			url = "https://www.example.com"),
+	  	                license = @License(
+						name = "IRCTC 2.0",
+						url = "https://www.example.com")),
+
+		  externalDocs = @ExternalDocumentation(
+				description =  "Train Ticket Booking REST API Documentation",
+				url = "https://www.cognizant.com/swagger-ui.html"))
+public class Application {
+
+
+2) documentation using @Tag, @Operation, @ApiResponse
+
+--- on controller class ----
+@Tag(name = "Ticket Booking Controller", 
+     description = "Book, Search, Cancel, Reschedule Ticket")
+public class TicketRestController {
+
+--- on method ---
+	
+@Operation(summary = "New Ticket Booking",
+           description = "booking a new train ticket based on passenger info")
+@ApiResponses(
+ 	  @ApiResponse(responseCode = "201",
+                       description = "TICKET CREATED"))
+	
+@PostMapping( ....)
+public ResponseEntity<?> newTicketBooking(@Valid @Re......
+
+
+3) documentaion of REST APIs using @Schema & example/sample data
+
+on the DTO class
+
+@Schema(name = "Passenger",
+        description = "Schema to hold passenger information")
+public class Passenger {
+
+	@NotBlank(message = "* required")
+	@Schema(description = "Name of the passenger", example = "Sunil Joseph" )
+	private String passengerName;
+
+	@Size(min = 3)
+	@Schema(description = "fromStation of travel, min 3 chars", example = "Hyderabad" )
+	private String fromStation;
+
+===============================================================================================
