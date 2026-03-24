@@ -1,0 +1,33 @@
+@PrePersist
+is a Java Persistence API (JPA) annotation used in Spring Boot applications to specify a method that should be executed automatically just before an entity is first saved (persisted) to the database
+
+
+The
+@PreUpdate annotation in Spring Boot (part of the Jakarta Persistence API or JPA) is used to specify a method that should be automatically invoked just before an entity is updated in the database
+
+
+Entity Class
+
+@Entity
+class Ticket{
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
+
+  @PrePersist
+  void onCreate(){
+     createdAt = LocalDateTime.now();
+  }
+
+  @PreUpdate
+  void onUpdate(){
+     updatedAt = LocalDateTime.now();
+  }
+}
+
+
+@Entity
+class Ticket{
+  @CreationTimeStamp
+  private LocalDate createdAt;
+  @UpdateTimeStamp
+  private LocalDate updatedAt;
