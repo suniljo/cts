@@ -1,0 +1,220 @@
+==========================
+Microservices Introduction
+==========================
+
+Traditional Application Development
+Modular Application Development
+
+Why we need Microservices?
+
+Before microservices we all know that there was an architectural pattern called Monolithic Architecture that was used. 
+
+==== What exactly Monolithic architecture means? ====
+
+-> Our application contains several modules. 
+-> Each module contains several components
+
+
+In an ECommerce Application (like flipkart.com) we got different modules like 1. Products, 2. Customers  3. Orders  4. Payments   5. Shipment	6. Admin 7. Reviews  8.Tracking etc - the entire thing is in one project - one code base
+
+Orders Controller     Orders Model    Orders View
+Products Controller   Products Model  Products View
+
+
+Presentation Components – responsible for handling HTTP requests (HTML Pages) 
+
+Web Components – responsible to handle user requests, what to do when a user click on login button, request handler.  
+
+Business Components- responsible to execute business logic (BL changes from page to page –  one screen to send OTP, one screen to send email, one screen to convert data from one format to another, based on screen to screen and project to project
+
+Persistence Components -Responsible for DB Operations
+
+Integration Components – one module/project needs to communicate with other module/project we need some integration – responsible for webservices/ REST API communications
+
+Authorization Components – responsible for authorizing user (for each user we can define the functionalities that can be accessed – check the role of the user when he sends a request)
+
+Notification Components -  Responsible for sending email/mobile message notifications whenever required
+etc
+
+-> A Project which holds all modules together and converted as one Service (one .war/.jar file).
+
+A Single Server ===> Presentation Layer (UI)  ---- Business Logic Layer  ------ Data Access Layer === Cards , Loans, Accounts  -- Single Supporting DB
+
+-> If we develop all the components in one application then it is called as Monolithic Architecture based application. (In this the entire software is composed in a single piece , that is designed to be self contained, so what I mean by that - basically all the components of a monolithic program are inter-connected and interdependent , or in other words, it will give you a tightly coupled software where each component along with its associated components must be present in order to execute or compile the code. So all of these components are actually dependent on each other.
+
+-> Monolithic Architecture is like a big container wherein all the software components of an application are assembled together and tightly packaged
+
+-> That application will be packaged as war file and will be deployed to server. That war is called as Fat war file.
+
+
+Monolithic Application - where all functionalities are put in one single code base. When we take this build of the code base, we get a .jar or .war or .ear file
+
+
+Use-case: Bank Application -Accounts, Cards, Loans
+
+====== Advantages: Pros =============
+
+1. as all the functionalities are put in one code base, testing and debugging becomes easy - Easy for testing – end to end testing
+
+2. Simpler development and deployment for smaller teams and applications - Easy/ Simple to develop & easy to understand
+
+3. this entire project is maintained by one team - easy to maintain
+
+4. Less Configuration (one-time configuration) 
+
+5. Fewer cross-cutting concerns - all the non-functional requirements like security, auditing, logging etc
+
+6. Better performance due to no network latency - all the code is deployed inside a single server, if accounts business logic wants to communicate with cards or loans- it is just going to be a method call inside the same server - no network call 
+
+7. Easier to deploy as only a single jar/war file we have to deploy
+
+8. Easy for Scaling- using load balancers – multiple server instances we can spin easily; instead of deploying our application in one server, we will deploy our application in multiple servers, so that they can share the load [100 kg to hold by one person?]
+
+9. Less infrastructure cost
+
+======= Disadvantages ========
+
+1. Maintenance: If application is too large and complex to understand, making changes for enhancements and CR is very difficult (Lot of Impact Analysis is required)
+  
+2. Difficult to adopt new technologies - whenever I want to enhance my web application with a new framework or with new programming  languages or new technology - either we have to update my entire codebase or I need to continue with the old technology. Accounts team may want to move to a new framework or the latest version of the framework - but there will be a push back coming from the Cards and Loans team member 
+
+3. The size of the application can reduce application startup time
+
+4. Reliability - If there is bug in one module, then it leads to entire application will go down
+
+5. We must re-deploy entire application when we make some changes to code. Tiny update and feature development always need a full deployment - ex: cards
+
+6. Quick releases are not possible
+
+  
+7. Limited Agility - very limited agility inside monolithic applications - it is going to work like - you decided to move to a new framework or technology or a new language today - you can't do that immediately in a week or a months time . It is going to take lot of time to upgrade your monolithic applications
+
+8. Single code base and difficult to maintain over the time as your application is growing with new enhancements day-by-day
+
+9. Application is not going to be a fault tolerance - which means you are going to be having frequent issues with the scalability , availability of your monolithic applications 
+
+10. tight coupling of all the modules
+say after 1 or 2 months after application is live in production, some new functionalities are coming from business as part of enhancements - mainly for orders related like discounts, special offers etc
+
+code base contains - Orders + Products + Users
+
+since all residing in one code base, though there is no changes to the other modules and because of one module code changes (here Orders) - we are building the entire code once, generated update jar or war file , take downtime of the complete application and deploy the new jar or war file to the server
+
+In monolithic applications there is no chance that some functionalities are up and some are down. If server down means all functionalities are down
+
+We have various forms of Monolithic with the names like - Single-Process Monolith, Modular Monolith, Distributed Monolith
+ 
+To overcome the limitations of Monolithic application - SOA 
+
+================
+SOA Architecture
+================ 
+It is an architectural style that focuses on organizing s/w systems as a collection of loosely coupled, interoperable services. It provides a way to design and develop large scale applications by decomposing them into smaller, modular services that can be independently developed, deployed and managed
+
+Server-1 ====> Presentation Layer (UI)   Middleware ===> Enterprise Service Bus   Server2 ===> Accounts Service, Cards Service, Loans Service ----- Single Supporting DB 
+
+Pros
+1. Reusability of Services
+2. Better Maintainability
+3. Higher reliability
+4. Parallel Development	
+-------> we have separated the entire logic to separate components - like all your accounts related logic is going to stay in A/C Service, similarly for Cards and Loans
+Coming to the UI Code is going to separated to a separate code base and it is going to be deployed into a separate server as well
+
+Cons:
+1. Complex Management due to communication protocols like SOAP
+2. High investment costs due to Vendor in Middleware - to setup ESB we need to invest a lot because these are not open source - commercial products - Oracle has got ESB product - Oracle Enterprise Service Bus is a component of Oracle SOA Suite
+
+3. Extra Overload - between UI and backend services
+
+=============
+Microservices
+=============
+
+Microservices is an Architectural Style that structures an application as a collection of small autonomous services, modelled around a Business domain. Basically it is a self contained process which avails different and unique business capabilities. 
+
+A large application can be broken down to small multiple services, which together access one large system.
+But behind the scene , It is a Microsoft Office. Each micro service can focus on only one single business capability which definitely leads to a better quality and it will be easy for us to understand 
+
+
+Microservices services are independently releasable services that are modelled around a business domain. A service encapsulates functionality and makes it accessible to other services via networks - One microservice might represent Accounts, another Cards, and yet another loans, but together they might constitute an entire bank system
+
+-> Microservices is an architectural design pattern
+-> To overcome problems of Monolith architecture we are using Microservices architecture.
+-> Any programming language can use Microservices design pattern to develop the applications.
+-> The main aim of microservices design pattern is 'Divide & conquer'
+-> Instead of developing all the functionalities in one project we will divide them into multiple services.
+-> In Microservices architecture, every service is a REST API.
+
+
+
+Pros:
+1. Easy to develop
+2. Increased Agility
+3. Ability to scale horizontally
+4. Parallel Development
+5. Modelled around a Business Domain
+
+Cons:
+1. Complexity
+2. Infrastructure Overload - many servers to monitor - each service in each server
+3. Security Concerns
+
+
+Advantages of Microservices
+1) Easy Maintenance
+-> As we are developing every service as a separate project it would be very easy to manage and maintain that project because limited functionality will be available. 
+-> Bug fixes can be done easily.
+
+2) Scalability - When load is increasing for microservices we can easily scale up our services using Load Balancers.
+
+3) Faster Releases -Development and testing can be done easily for service and quickly we can deliver that service.
+
+4) Quick development	Development can be done faster because one or two functionalities only will be part of one service.
+
+5) Loosely Coupled
+
+6) Language Neutral 	Note: We can develop services using multiple technologies also.
+
+7) Independent Development 
+
+8) Independent Deployment
+
+9) Mixed Technology Stack
+
+10) Fault Isolation
+
+11) Granular Scaling
+etc
+
+
+Companies using Microservices:
+ - Amazon	 - Netflix	 - Twitter	 - Uber	 - Paypal	 - ebay etc
+
+Large Applications can be easily managed by using microservices
+
+
+Microservices are an architectural style that develops a single application as a set of small services. Each service runs in its own process. The services communicate with clients, and often each other, using light-weight protocols, often over messaging or HTTP.
+
+Challenges with Microservices
+1) Bounded Context
+-> Deciding boundary(functionality) of service is difficult.
+Ex : Client has provided 100 requirements. 
+how many services we need to create for them?  
+what functionality should be there in each service ?
+Developer-1 : Saying 40 services are sufficient
+Developer-2 : Saying 35 services are sufficient
+Developer-3 : Saying 30 services are sufficient
+
+2) Lot of configuration
+-> As we are developing multiple services, in every service we have to write configuration
+- security configuration		- actuators configuration		- data source configuration
+- kafka configuration		- redis configuration	 		- logging configuration etc.
+
+3) Visibility
+-> Microservices will be developed by multiple teams. All the teams will not have idea on all services.
+
+4) Pack of cards problem
+If one microservice is failed in request processing then subsequent services cannot complete request processing.
+
+
