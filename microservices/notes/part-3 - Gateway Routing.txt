@@ -94,6 +94,7 @@ To workaround this issue, we use an API Gateway as the facade that provides an a
 API Gateway acts as an abstraction over the microservices, and it forwards the request from the client to the relevant microservices.
 
 To implement this feature, Spring Cloud Gateway uses the below building blocks:
+
 Spring Cloud Gateway have 3 important parts::
 
 1. Routes
@@ -140,15 +141,18 @@ Spring Reactor & Spring WebFlux ---> Spring Reactive Programming
 spring.io > Projects > Spring Cloud > Spring Cloud Gateway
 
 
+
+===== PRACTICALS =====
+
 ---------- Building Edge Server using Spring Cloud Gateway --------------
 
 1. Create a New Spring Starter Project - gateway-server
-   Edge Server for CTS Bank microservices
-   com.cognizant.gatewayserver
+   description: Edge Server for CTS Bank microservices
+   com.cognizant.gateway
 
 Dependencies: Reactive Gateway, Eureka Discovery Client (to connect to the eureka server and to fetch the service registry details of all the other microservices), Spring Boot Actuator, Spring Boot DevTools
 
--- application.yml ----  (from accounts ms and make corrections)
+-- application.properties ---- 
 
 spring.application.name=gateway-server
 
@@ -158,7 +162,7 @@ management.endpoints.web.exposure.include= *
 management.info.env.enabled= true
 
 info.app.name= gatewayserver
-info.app.description= TCS Bank Gateway Server Application
+info.app.description= Cognizant Bank Gateway Server Application
 info.app.version= 1.0.0
 
 management.endpoint.gateway.access=unrestricted
@@ -170,7 +174,7 @@ spring.cloud.gateway.server.webflux.discovery.locator.enabled: true   ---> we ar
 
 ----> Edge Server with default routing configs <-------
 
-=====>  run eureka server, all microservices and then only gateway server
+=====>  run eureka server, all 3 microservices and then only gateway server
 
 http://localhost:8761/ ---> eureka server dashboard
 
@@ -191,6 +195,9 @@ GET http://localhost:8072/ACCOUNTS/api/fetch?mobileNumber= xxxxx
 same way access loans and cards
 
 http://localhost:8072/LOANS/api/create?mobileNumber=9848586878
+http://localhost:8072/CARDS/api/create?mobileNumber=9848586878
+
+http://localhost:8072/ACCOUNTS/api/fetchCustomerDetails?mobileNumber=9848586878
 
 
 ---- make changes in application.properties/application.yml inside Gateway server to accept service names with lower case ----
@@ -314,6 +321,183 @@ spring.cloud.gateway.discovery.locator.lower-case-service-id=true
 spring.cloud.gateway.routes[0].id=service1
 spring.cloud.gateway.routes[0].uri=lb://MICROSERVICE1
 spring.cloud.gateway.routes[0].predicates[0]=Path=/service1/**
+
+================================ APPROACH - 2 ===========================================
+
+1. Develop Service Registry - eureka-server
+  (a) dependencies: Eureka Server, DevTools
+
+  (b) @EnableEurekaServer annotation on boot start class
+  (c) application.yml
+spring:
+  application:
+    name: service-registry
+server:
+  port: 8761
+eureka:
+  client:
+    register-with-eureka: false	
+
+  (d) Once application started we can access Eureka Dashboard using below URL
+		URL : http://localhost:8761/
+
+
+2. Develop WELCOME-API
+  
+  (a) new project : welcome-service
+      dependencies: Spring Web, DevTools, Actuator, Eureka Discovery Client, OpenFeign
+  (b) application.yml
+spring:
+  application:
+    name: welcome-service
+server:
+  port: 8081
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+
+  (c) create Rest Controller - WelcomeRestController
+@RestController
+public class WelcomeRestController {
+
+	@GetMapping("/welcome")
+	public String showWelcomeMessage() {
+		String msg = "Welcome To Cognizant..!!";
+		return msg;
+	}
+}
+
+
+3. Develop GREET-API
+  (a) new project : greet-service
+      dependencies: Spring Web, DevTools, Actuator, Eureka Discovery Client
+
+  (b) application.yml
+spring:
+  application:
+    name: greet-service
+server:
+  port: 9091
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+
+  (c) create Rest Controller - GreetRestController
+@RestController
+public class GreetRestController {
+
+	@GetMapping("/greet")
+	public String showGreetings() {
+		String msg = "Greetings from Cognizant..!!";
+		return msg;
+	}
+}
+
+
+4. Interservice communication - welcome-service should access greet-service
+
+(a) include OpenFeign dependency to welcome-service
+(b) @EnableFeignClients on bootstrap class of welcome-service
+
+(c) Create FeignClient interface like below
+
+@FeignClient("GREET-SERVICE")
+public interface GreetApiClient {
+	@GetMapping("/greet")
+	public String showGreetings();
+}
+
+ (d) Inject feign client into WelcomeRestController like below
+ 
+@RestController
+public class WelcomeRestController {
+	@Autowired
+	private GreetApiClient greetFeignClient;
+	
+	@GetMapping("/welcome")
+	public String getWelcomeMsg() {
+		String msg = "Welcome To Cognizant..!!";
+		String greetMessage = greetFeignClient.showGreetings();
+		String responseMsg = msg+"\n"+greetMessage;
+		
+		return responseMsg;
+	}
+}
+
+
+5. Working with Spring Cloud API Gateway
+
+(a) create a new spring starter project : gateway-server
+    dependencies: Reactive Gateway, DevTools, Actuator, Eureka Discovery Client
+(b) application.yml
+spring:
+  application:
+    name: gateway-server
+  cloud:
+    gateway:
+      routes:
+      - id: api-1
+        uri: lb://WELCOME-SERVICE
+        predicates: 
+          - Path=/welcome
+      - id: api-2
+        uri: lb://GREET-SERVICE
+        predicates: 
+          - Path=/greet
+server:
+  port: 3333
+ 
+ (c) application.properties
+
+management.endpoints.web.exposure.include= *
+management.endpoint.gateway.access=unrestricted
+spring.cloud.gateway.server.webflux.discovery.locator.enabled= true  
+
+ (d) check routes - http://localhost:3333/actuator/gateway/routes
+
+ (e) http://localhost:3333/WELCOME-SERVICE/welcome
+
+ (f) Create Filter to validate incoming request - MyRequestFilter.java
+
+		if request contains below header then it is valid request so process it
+			secret=sunil@123
+
+		if above header is not present then it is invalid request, don't process it.	
+
+package com.cognizant.gateway.filters;
+
+@Component
+public class MyRequestFilter implements GlobalFilter {
+
+	@Override
+	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+
+		System.out.println(" filter() - executed..... ");
+
+		// validate request
+		
+		ServerHttpRequest request = exchange.getRequest();
+		HttpHeaders headers = request.getHeaders();
+		Set<String> keySet = headers.headerNames();
+		
+		if(!keySet.contains("secret")) {
+			throw new RuntimeException("Invalid Request");
+		}
+		
+		List<String> list = headers.get("secret");
+		if(!list.get(0).equals("sunil@123")) {
+			throw new RuntimeException("Invalid Request");
+		}
+		
+		return chain.filter(exchange);
+	}
+}
 
 
 ===========================================  END =================================================
