@@ -332,7 +332,7 @@ Developing Config Server App
 			app name : welcome then file name : welcome.yml
 
 
-### Git Repo : https://github.com/suniljo/configuration_properties
+### Git Repo : https://github.com/suniljo/configurations.git
 
 2) Create Spring Starter application with below dependencies - config-server
 
@@ -350,7 +350,7 @@ spring:
     config:
       server:
         git:
-          uri: https://github.com/suniljo/configuration_properties
+          uri: https://github.com/suniljo/configurations
 server:
   port: 9093	
 
@@ -362,7 +362,7 @@ Config Client Development
 
 1) Create Spring Boot application with below dependencies
 
-				a) web-starter
+				a) spring web
 				b) config-client
 				c) dev-tools
 				d) actuators
@@ -370,12 +370,12 @@ Config Client Development
 2) Create Rest Controller with Required methods
 
 @RestController
-public class MsgRestController {
+public class WelcomeRestController {
 
 	@Value("${msg}")
 	private String msg;
 
-	@GetMapping("/")
+	@GetMapping("/welcome")
 	public String getMsg() {
 		return msg;
 	}
