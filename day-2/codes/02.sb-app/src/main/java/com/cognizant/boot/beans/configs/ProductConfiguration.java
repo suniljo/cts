@@ -2,6 +2,7 @@ package com.cognizant.boot.beans.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 
 import com.cognizant.boot.utils.SecurityUtility;
@@ -21,6 +22,7 @@ public class ProductConfiguration {
 	@Bean(value = {"security", "encoder"}, initMethod = "myInit", destroyMethod = "myDestroy")
 	@Scope("singleton")
 	//@Scope(value = "prototype")
+	@Lazy
 	public SecurityUtility generateSecurityUtility() {
 		return new SecurityUtility();
 	}
