@@ -1,0 +1,116 @@
+2026-05-18T10:34:15.550+05:30  INFO 17168 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : Starting Application using Java 17.0.0.1 with PID 17168 (C:\cognizant\EPS26IPM020\spring\boot\data\05.sb-data-pagination\target\classes started by Sunil Joseph in C:\cognizant\EPS26IPM020\spring\boot\data\05.sb-data-pagination)
+2026-05-18T10:34:15.553+05:30  INFO 17168 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : No active profile set, falling back to 1 default profile: "default"
+2026-05-18T10:34:15.947+05:30  INFO 17168 --- [05.sb-data-pagination] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-18T10:34:15.997+05:30  INFO 17168 --- [05.sb-data-pagination] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 42 ms. Found 1 JPA repository interface.
+2026-05-18T10:34:16.246+05:30  INFO 17168 --- [05.sb-data-pagination] [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-05-18T10:34:16.299+05:30  INFO 17168 --- [05.sb-data-pagination] [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.12.Final
+2026-05-18T10:34:16.679+05:30  INFO 17168 --- [05.sb-data-pagination] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-18T10:34:16.703+05:30  INFO 17168 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-18T10:34:17.042+05:30  INFO 17168 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@72324965
+2026-05-18T10:34:17.044+05:30  INFO 17168 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-18T10:34:17.112+05:30  INFO 17168 --- [05.sb-data-pagination] [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:3306/db_cognizant]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.0.34
+	Default catalog/schema: db_cognizant/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-18T10:34:17.777+05:30  INFO 17168 --- [05.sb-data-pagination] [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-18T10:34:17.842+05:30  INFO 17168 --- [05.sb-data-pagination] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-18T10:34:17.906+05:30  INFO 17168 --- [05.sb-data-pagination] [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-18T10:34:18.070+05:30  INFO 17168 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : Started Application in 2.919 seconds (process running for 3.603)
+2026-05-18T10:34:18.282+05:30  INFO 17168 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-18T10:34:18.285+05:30  INFO 17168 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-05-18T10:34:18.294+05:30  INFO 17168 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-05-18T10:37:14.633+05:30  INFO 25680 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : Starting Application using Java 17.0.0.1 with PID 25680 (C:\cognizant\EPS26IPM020\spring\boot\data\05.sb-data-pagination\target\classes started by Sunil Joseph in C:\cognizant\EPS26IPM020\spring\boot\data\05.sb-data-pagination)
+2026-05-18T10:37:14.636+05:30  INFO 25680 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : No active profile set, falling back to 1 default profile: "default"
+2026-05-18T10:37:15.045+05:30  INFO 25680 --- [05.sb-data-pagination] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-18T10:37:15.087+05:30  INFO 25680 --- [05.sb-data-pagination] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 34 ms. Found 1 JPA repository interface.
+2026-05-18T10:37:15.318+05:30  INFO 25680 --- [05.sb-data-pagination] [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-05-18T10:37:15.375+05:30  INFO 25680 --- [05.sb-data-pagination] [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.12.Final
+2026-05-18T10:37:15.781+05:30  INFO 25680 --- [05.sb-data-pagination] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-18T10:37:15.825+05:30  INFO 25680 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-18T10:37:16.119+05:30  INFO 25680 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1109730f
+2026-05-18T10:37:16.120+05:30  INFO 25680 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-18T10:37:16.185+05:30  INFO 25680 --- [05.sb-data-pagination] [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:3306/db_cognizant]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.0.34
+	Default catalog/schema: db_cognizant/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-18T10:37:16.906+05:30  INFO 25680 --- [05.sb-data-pagination] [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-18T10:37:16.953+05:30  INFO 25680 --- [05.sb-data-pagination] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-18T10:37:17.019+05:30  INFO 25680 --- [05.sb-data-pagination] [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-18T10:37:17.196+05:30  INFO 25680 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : Started Application in 2.977 seconds (process running for 3.485)
+2026-05-18T10:37:17.409+05:30  INFO 25680 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-18T10:37:17.415+05:30  INFO 25680 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-05-18T10:37:17.429+05:30  INFO 25680 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-05-18T10:37:50.524+05:30  INFO 19360 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : Starting Application using Java 17.0.0.1 with PID 19360 (C:\cognizant\EPS26IPM020\spring\boot\data\05.sb-data-pagination\target\classes started by Sunil Joseph in C:\cognizant\EPS26IPM020\spring\boot\data\05.sb-data-pagination)
+2026-05-18T10:37:50.527+05:30  INFO 19360 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : No active profile set, falling back to 1 default profile: "default"
+2026-05-18T10:37:50.929+05:30  INFO 19360 --- [05.sb-data-pagination] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-18T10:37:50.976+05:30  INFO 19360 --- [05.sb-data-pagination] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 38 ms. Found 1 JPA repository interface.
+2026-05-18T10:37:51.227+05:30  INFO 19360 --- [05.sb-data-pagination] [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-05-18T10:37:51.286+05:30  INFO 19360 --- [05.sb-data-pagination] [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.12.Final
+2026-05-18T10:37:51.675+05:30  INFO 19360 --- [05.sb-data-pagination] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-18T10:37:51.701+05:30  INFO 19360 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-18T10:37:51.980+05:30  INFO 19360 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4dd1548e
+2026-05-18T10:37:51.981+05:30  INFO 19360 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-18T10:37:52.052+05:30  INFO 19360 --- [05.sb-data-pagination] [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:3306/db_cognizant]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.0.34
+	Default catalog/schema: db_cognizant/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-18T10:37:52.726+05:30  INFO 19360 --- [05.sb-data-pagination] [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-18T10:37:52.796+05:30  INFO 19360 --- [05.sb-data-pagination] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-18T10:37:52.875+05:30  INFO 19360 --- [05.sb-data-pagination] [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-18T10:37:53.057+05:30  INFO 19360 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : Started Application in 2.956 seconds (process running for 3.512)
+2026-05-18T10:37:53.274+05:30  INFO 19360 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-18T10:37:53.277+05:30  INFO 19360 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-05-18T10:37:53.286+05:30  INFO 19360 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-05-18T10:45:56.149+05:30  INFO 21056 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : Starting Application using Java 17.0.0.1 with PID 21056 (C:\cognizant\EPS26IPM020\spring\boot\data\05.sb-data-pagination\target\classes started by Sunil Joseph in C:\cognizant\EPS26IPM020\spring\boot\data\05.sb-data-pagination)
+2026-05-18T10:45:56.154+05:30  INFO 21056 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : No active profile set, falling back to 1 default profile: "default"
+2026-05-18T10:45:56.544+05:30  INFO 21056 --- [05.sb-data-pagination] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-18T10:45:56.590+05:30  INFO 21056 --- [05.sb-data-pagination] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 36 ms. Found 1 JPA repository interface.
+2026-05-18T10:45:56.849+05:30  INFO 21056 --- [05.sb-data-pagination] [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-05-18T10:45:56.900+05:30  INFO 21056 --- [05.sb-data-pagination] [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.12.Final
+2026-05-18T10:45:57.365+05:30  INFO 21056 --- [05.sb-data-pagination] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-18T10:45:57.405+05:30  INFO 21056 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-18T10:45:57.696+05:30  INFO 21056 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4dd1548e
+2026-05-18T10:45:57.698+05:30  INFO 21056 --- [05.sb-data-pagination] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-18T10:45:57.767+05:30  INFO 21056 --- [05.sb-data-pagination] [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:3306/db_cognizant]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.0.34
+	Default catalog/schema: db_cognizant/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-18T10:45:58.471+05:30  INFO 21056 --- [05.sb-data-pagination] [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-18T10:45:58.535+05:30  INFO 21056 --- [05.sb-data-pagination] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-18T10:45:58.598+05:30  INFO 21056 --- [05.sb-data-pagination] [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-18T10:45:58.776+05:30  INFO 21056 --- [05.sb-data-pagination] [main] com.cognizant.cms.Application            : Started Application in 3.04 seconds (process running for 3.608)
+2026-05-18T10:46:05.207+05:30  INFO 21056 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-18T10:46:05.211+05:30  INFO 21056 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-05-18T10:46:05.220+05:30  INFO 21056 --- [05.sb-data-pagination] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
