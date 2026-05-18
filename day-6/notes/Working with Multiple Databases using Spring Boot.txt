@@ -1,0 +1,220 @@
+How to configure multiple databases in Spring Boot? OR How to connect with multiple databases using Spring Boot?
+
+Spring Boot Application ---> Oracle Database & MySQL DB
+
+Dependencies: Spring Data Jpa , MySQL, Oracle
+application.properties
+
+#Oracle
+spring.db1.datasource.jdbcUrl=jdbc:oracle:thin:@localhost:1521:XE
+spring.db1.datasource.username=admin
+spring.db1.datasource.password=1234
+spring.db1.datasource.driver-class-name=oracle.jdbc.driver.OracleDriver
+
+#MySQL
+spring.db2.datasource.jdbcUrl=jdbc:mysql://localhost:3306/sbmsdb
+spring.db2.datasource.username=root
+spring.db2.datasource.password=root
+spring.db2.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
+spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+------------------------------------------------------------------------------------------------------
+
+MySQL Database names : db1, db2
+
+application.properties
+
+#MySQL DB-1
+spring.db1.datasource.jdbcUrl=jdbc:mysql://localhost:3306/db1
+spring.db1.datasource.username=root
+spring.db1.datasource.password=root
+spring.db1.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+#MySQL DB-2
+spring.db2.datasource.jdbcUrl=jdbc:mysql://localhost:3306/db2
+spring.db2.datasource.username=root
+spring.db2.datasource.password=root
+spring.db2.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=create
+spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+------------- Entity Classes (Book & User) --------------
+we need to maintain the entities in 2 different packages
+
+Book.java
+
+package com.modeln.db1.entities;
+@Data	
+@AllArgsConstructor	
+@NoArgsConstructor
+@Entity
+@Table(name="BOOK_TBL")
+public class Book {
+  @Id
+  private int id;
+  private String name;
+}
+
+User.java
+
+package com.modeln.db2.entities;
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+@Table(name="USER_TBL")
+public class User {
+ @Id
+ private int id;
+ private String userName;
+}
+
+BookRepository.java
+
+package com.modeln.db1.repositories;
+@Repository
+public interface BookRepository extends JpaRepository<Book, Integer>{}
+
+UserRepository.java
+
+package com.modeln.db2.repositories;
+@Repository
+public interface UserRepository extends JpaRepository<User, Integer> {}
+
+
+If we have only one database, then Spring Boot will create the datasource for us; but if we are having multiple datasources - we need to create it ourselves; we need to create the Datasource configurations separately
+
+---- Db1Config.java -----
+
+package com.modeln.config;
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+         entityManagerFactoryRef = "entityManagerFactory",
+   	 //transactionManagerRef = "transactionManager",
+         basePackages = {"com.modeln.db1.repositories"})
+public class Db1Config{
+ //@Primary
+ @Bean(name = "dataSource")
+ @ConfigurationProperties(prefix = "spring.db1.datasource")
+ public DataSource dataSource(){
+   return DataSourceBuilder.create().build();
+ }
+ 
+ @Bean(name = "entityManagerFactory")
+ public LocalContainerEntityManagerFactoryBean entityManagerFactory(EntityManagerFactoryBuilder builder, @Qualifier("dataSource") DataSource dataSource) {
+	HashMap<String, Object> properties = new HashMap<>();
+	properties.put("hibernate.hbm2ddl.auto", "update");
+	//properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+	return builder.dataSource(dataSource)
+                  .properties(properties)
+                  .packages("com.modeln.db1.entities")
+                  .persistenceUnit("book")
+                  .build();
+	}
+
+	@Bean(name = "transactionManager")
+	public PlatformTransactionManager transactionManager(
+			@Qualifier("entityManagerFactory") EntityManagerFactory entityManagerFactory) {
+		return new JpaTransactionManager(entityManagerFactory);
+	}
+}
+
+
+-- first we are creating "DataSource" - then - DataSource is injected to EntityManager - and then "EntityManager" is injected to "TransactionManager"
+
+
+------ Db2Config.java --------
+
+package com.modeln.config;
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+         entityManagerFactoryRef = "userEntityManagerFactory",
+         transactionManagerRef = "userTransactionManager",
+         basePackages = {"com.modeln.db2.repositories"})
+public class Db2Config{
+ @Primary
+ @Bean(name = "userDataSource")
+ @ConfigurationProperties(prefix = "spring.db2.datasource")
+ public DataSource dataSource(){
+   return DataSourceBuilder.create().build();
+ }
+ 
+ @Primary
+ @Bean(name = "userEntityManagerFactory")
+ public LocalContainerEntityManagerFactoryBean entityManagerFactory(EntityManagerFactoryBuilder builder, @Qualifier("userDataSource") DataSource dataSource) {
+	HashMap<String, Object> properties = new HashMap<>();
+	properties.put("hibernate.hbm2ddl.auto", "update");
+	//properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+	return builder.dataSource(dataSource)
+                  .properties(properties)
+		          .packages("com.modeln.db2.entities")
+                  .persistenceUnit("User")
+		          .build();
+	}
+
+	@Primary
+	@Bean(name = "userTransactionManager")
+	public PlatformTransactionManager transactionManager(
+			@Qualifier("userEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+		return new JpaTransactionManager(entityManagerFactory);
+	}
+}
+
+
+
+------------ Application.java -----------------
+package com.modeln;
+
+@SpringBootApplication
+public class Application {	
+	@Autowired
+	private BookRepository bookRepository;
+	
+	@Autowired
+	private UserRepository userRepository;
+
+	@PostConstruct
+	public void addDataToDB() {
+		userRepository.saveAll(Stream.of(new User(101, "Sanjay"), new User(102, "Praveen")).collect(Collectors.toList()));
+		bookRepository.saveAll(Stream.of(new Book(111, "Core Java"), new Book(112, "Spring Boot")).collect(Collectors.toList()));		
+	}
+	
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);	
+	}
+
+}
+
+----------------------------------------------------------------------
+
+@RestController
+public class DemoRestController {
+
+	@Autowired
+	private BookRepository bookRepository;
+
+	@Autowired
+	private UserRepository userRepository;
+
+	@PostConstruct
+	public void addData2DB() {
+		userRepository.saveAll(Stream.of(new User(744, "John"), new User(455, "Pitter")).collect(Collectors.toList()));
+		bookRepository.saveAll(Stream.of(new Book(111, "Core Java"), new Book(222, "Spring Boot")).collect(Collectors.toList()));
+	}
+
+	@GetMapping("/getUsers")
+	public List<User> getUsers() {
+		return userRepository.findAll();
+	}
+
+	@GetMapping("/getBooks")
+	public List<Book> getBooks() {
+		return bookRepository.findAll();
+	}
+}

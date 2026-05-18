@@ -1,0 +1,264 @@
+Spring Transactions
+===================
+Pre-requisite : AOP
+@Transactional Annotation
+
+Critical Operations or Code Sections
+
+Code segment where shared resources are being accessed and modified
+{
+  Read Flight Seat with ID; 1
+   if seatStatus is Avaiable
+       update to Booked
+}
+
+When multiple requests try to access this critical section, data inconsistency can happen.
+
+What is the solution?
+
+Transaction - helps to achieve ACID properties
+
+A - Atomicity - ensures all operations in transaction are completed successfully. If any operation fails then entire transaction is rolled back. Ex: Bank Transfer
+
+C - Consistency - ensures the Database state before and after transaction is consistent
+
+I - Isolation - ensures that, if multiple transactions are running in parallel, they do not interfere with each other
+
+D - Durability - ensures that committed transaction will never be lost despite of system failures
+
+
+How transaction works?
+BEGIN_TRANSACTION
+  1. Debit from A/C A
+  2. Credit to A/C B 
+  If All Success
+	COMMIT
+  Else:
+        ROLLBACK
+END_TRANSACTION
+
+
+
+@Transactional  - Class Level - applies to all public methods
+@Transaction    - Method Level
+
+@EnableTransactionManagement //optional  - already done through auto-configuration of spring boot
+
+@Transactional - will (1) Create a Transaction (2) Invoke Method (3) Commit/ Rollback
+
+Transaction Management in Spring - uses AOP
+1. uses Pointcut expression to search for methods having @Transactional annotation
+ @within("org.springframework.transaction.annotation.Transactional")
+
+CTRL+SHIFT+T
+TransactionAspectSupport - line 346 - protected Object invokeWithinTransaction
+line no: 386 createTransactionIfNecessary(
+line no: 392  invocation.proceedWithInvocation(); - method will be invoked
+line 396 :    - if any error - completeTransactionAfterThrowing(txInfo, ex); ---- 686  --- rollback 694)
+
+if no exception - 426  -- commitTransactionAfterReturning(txtInfo)
+
+-- debug and test it
+
+
+
+Transactional Context::
+ 1. Programmatic
+ 2. Declarative
+
+Transaction Propagations
+ 1. REQUIRED
+ 2. SUPPORTS
+ 3. MANDATORY
+ 4. REQUIRES_NEW
+ 5. NOT_SUPPORTED
+ 6. NEVER
+ 7. NESTED
+
+Isolation Levels
+ 1. DEFAULT
+ 2. READ_UNCOMMITTED
+ 3. READ_COMMITTED
+ 4. REPEATABLE_READ
+ 5. SERIALIZABLE
+
+Transaction Timeouts
+Read Only Transactions
+
+@Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REQUIRED)
+
+throw new RuntimeException()
+
+Transaction Propagation - as the name suggests - how the transaction should be propagated to other method - that will be decided by the Transaction Propagation
+
+
+Transaction Propagation refers to how transactions behave when a method annotated with @Transactional is called by another method that may or may not have an active transaction
+
+
+Method1(@Transactional)   ----->   Method2  
+
+
+Debug > Expressions - TransactionAspectSupport.currentTransactionsStatus()
+
+
+
+
+=========================================================================
+In Spring Boot, transaction management is typically handled using the powerful @Transactional annotation, which ensures data consistency by treating a sequence of database operations as a single unit of work. 
+
+
+Example Scenario: Banking Funds Transfer
+
+Consider a banking application where a funds transfer requires two database operations:
+
+1. Decrease the balance in the sender's account.
+2. Increase the balance in the recipient's account. 
+
+If the first operation succeeds but the second fails (e.g., due to a system error or data constraint violation), the entire transaction should be rolled back to maintain data integrity. The @Transactional annotation guarantees this "all or nothing" outcome
+
+1) New Spring Starter Project - Spring Web, Spring Data JPA, MySQL, Lombok
+
+2) Entity Class - Account.java
+
+@Entity
+@Data
+public class Account {
+    @Id
+    private Long id;
+    private String accountNumber;
+    private BigDecimal balance;
+}
+
+
+3) Repository Interface
+
+public interface AccountRepository extends JpaRepository<Account, Long> { }
+
+4) Service Layer with @Transactional
+Apply the @Transactional annotation to the service layer method where the business logic resides. This is the recommended practice. 
+
+AccountService.java
+
+@Service
+@Slf4j
+public class AccountService {
+
+    private final AccountRepository accountRepository;
+
+    @Autowired
+    public AccountService(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
+    }
+
+    @Transactional // Ensures atomicity for this method
+    public void transferFunds(Long fromAccountId, Long toAccountId, BigDecimal amount) {
+        log.info("Transfer Fund: {} - {} - {}", fromAccountId, toAccountId, amount);
+    	// 1. Decrease balance in sender's account
+         Account fromAccount = accountRepository.findById(fromAccountId).orElseThrow(() -> new RuntimeException("Sender account not found"));
+        
+        if (fromAccount.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient funds");
+        }
+        
+        fromAccount.setBalance(fromAccount.getBalance().subtract(amount));
+        accountRepository.save(fromAccount);
+
+
+        // 2. Increase balance in recipient's account
+        Account toAccount = accountRepository.findById(toAccountId).orElseThrow(() -> new RuntimeException("Recipient account not found"));
+            
+        toAccount.setBalance(toAccount.getBalance().add(amount));
+        accountRepository.save(toAccount);
+    }
+}
+
+
+5) DTO  - TransferRequest.java
+@Data
+public class TransferRequest {
+	private Long fromAccount;
+	private Long toAccount;
+	private BigDecimal amount;
+}
+
+
+6) Controller class - AccountRestController.java
+
+@RestController
+@RequestMapping("/api/bank")
+public class AccountRestController {
+
+	private AccountService accountService;
+
+	public AccountRestController(AccountService accountService) {
+		super();
+		this.accountService = accountService;
+	}
+	
+	@PostMapping("/transfer")
+	public String doTransfer(@RequestBody TransferRequest transReq) {
+		accountService.transferFunds(transReq.getFromAccount(), transReq.getToAccount(), transReq.getAmount());
+		return "Done";
+	}
+}
+
+
+7) insert some records / accounts in DB
+
+insert into account values (1, 1000001, 25000), (2, 1000002, 12500);
+
+
+8) test it
+
+POST   http://localhost:8080/api/bank/transfer
+{
+ "fromAccount": 1,
+ "toAccount": 2,  //24 (not a valid account)
+ "amount" :20000
+}
+
+
+How it Works?
+
+1. When the transferFunds() method is called, Spring's AOP (Aspect-Oriented Programming) mechanism intercepts the call, starts a new database transaction, and acquires a database connection.
+
+2. If all operations within the method execute successfully, the transaction is committed when the method returns.
+
+3. If an unchecked exception (like RuntimeException or NullPointerException) is thrown, Spring automatically rolls back the entire transaction, undoing any changes made to the database within that method call.
+
+
+============================
+@Transactional Vs @Modifying
+============================
+
+In Spring Boot, the @Transactional annotation manages the ACID properties of transactions across service operations, while the @Modifying annotation in a Spring Data JPA repository indicates that a custom @Query method is intended to modify the database state (e.g., UPDATE, DELETE, INSERT)
+
+
+=== @Transactional ===
+
+Purpose: 
+The primary function of @Transactional is to define the boundaries of a logical unit of work. 
+
+It ensures that all database operations within its scope are treated as a single, atomic unit: either all succeed and are committed, or if any fail, all are rolled back to the state before the transaction began.
+
+Location: It is typically applied to service-layer methods to encapsulate business logic that may involve multiple repository calls across different tables.
+
+Behavior: 
+Spring uses AOP (Aspect-Oriented Programming) to create a proxy that starts a transaction when the method begins and commits/rolls back when it ends.
+
+Key Attributes: 
+It offers attributes to customize transaction behavior, such as propagation (how transactions interact when one calls another), isolation (how data changes are visible to other concurrent transactions), readOnly (optimizes performance for read-only operations), and rollbackFor (specifies which exceptions trigger a rollback). 
+
+
+=== @Modifying ===
+
+Purpose: 
+In Spring Data JPA, repository methods are considered read-only by default for performance optimization. 
+
+The @Modifying annotation is required alongside a custom @Query to explicitly inform Spring Data JPA that the method will execute a Data Manipulation Language (DML) statement (e.g., UPDATE, DELETE), allowing it to perform the correct execution.
+
+Location: 
+It is applied to repository interface methods that use @Query for updates or deletions.
+
+Requirement: 
+A method annotated with @Modifying must be executed within a transaction. If not called from a service method already marked @Transactional, it will likely throw a TransactionRequiredException at runtime.

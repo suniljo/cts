@@ -1,0 +1,887 @@
+==============================
+Spring Data JPA Relationships 
+==============================
+
+- whenever multiple entities are coming into picture inside your application
+- how entities are inter-related with each other and how that can be implemented by using Spring Data JPA 
+
+- we have seen the architecture and entity life cycle 
+- we have seen spring data jpa implementation - CrudRepository, JpaRepository, PagingAndSortingRepository, ListPagingAndSortingRepository etc 
+
+- what exactly is relationship , how we can define the relationship between the two entities 
+
+there are multiple types of relationships 
+-> one-to-one 
+-> one-to-many 
+-> many-to-one
+-> many-to-many 
+
+
+
+Spring Data JPA uses specific annotations to map Java objects (entities) to relational database tables and define the relationships between them. The four primary relationship types are: 
+
+1. @OneToOne: A single instance of one entity relates to exactly one instance of another entity (e.g., a user and a user profile).
+
+2. @OneToMany: A single instance of one entity relates to multiple instances of another entity (e.g., a department and its employees).
+
+3. @ManyToOne: Multiple instances of one entity relate to a single instance of another entity. This is often the inverse side of a @OneToMany relationship and typically owns the foreign key.
+
+4. @ManyToMany: Multiple instances of one entity relate to multiple instances of another entity (e.g., a student and multiple courses)
+
+
+=== Applicant Management System ===
+
+Entity - Applicant.java - id (long), name (String), email (S), phone (S), status (S)
+
+
+relationship is basically the way - using which - two or more entities are associated with each other 
+
+let's define another entity - Resume 
+
+An Applicant can have a Resume - each applicant will have resume 
+As an applicant - when I apply on the Application Management System -I can only upload one resume 
+
+Resume - id, content, applicantid
+
+One Applicant can have only have one Resume 
+
+=== Entity-Relationship Diagram ====
+
+ER Diagram
+
+
+@Entity
+@Data
+public class Applicant {
+	@Id
+	private Long id;
+	private String name;
+	private String email;
+	private String phone;
+	private String status;
+}
+
+
+@Entity
+@Data
+public class Resume {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)	
+	private Long id;
+	
+	private String content;
+	
+	@OneToOne
+	@JoinColumn(name = "applicantid", nullable = false)
+	private Applicant applicant;
+}
+
+
+@JoinColumn: This annotation specifies the actual column in the database table that is used for joining the entities (i.e., the foreign key column). It is typically used on the owning side of @OneToOne, @ManyToOne, and in some @OneToMany configurations
+
+@JoinColumn: Used to specify the name of the foreign key column in the database table.
+
+
+@SpringBootApplication
+public class TestApplication implements CommandLineRunner {
+	private ApplicantRepository applicantRepo;
+	private ResumeRepository resumeRepo;
+	
+	public TestApplication(ApplicantRepository applicantRepo, ResumeRepository resumeRepo) {
+		super();
+		this.applicantRepo = applicantRepo;
+		this.resumeRepo = resumeRepo;
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(TestApplication.class, args);
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+			Applicant applicant = new Applicant();
+			applicant.setId(101L);
+			applicant.setName("Sunil Joseph");
+			applicant.setEmail("sunil@gmail.com");
+			applicant.setPhone("9848586878");
+			
+			Resume resume = new Resume();
+			resume.setContent("Sunil\'s Resume content");
+			resume.setApplicant(applicant);
+			
+			//applicantRepo.save(applicant);
+			resumeRepo.save(resume);
+	}
+
+}
+
+-- this is one directional mapping - uni-directional mapping
+-- we can have resume while we are adding applicant itself - bi-directional association between your entities
+
+Unidirectional vs. Bidirectional
+================================
+A relationship defined using Spring Data JPA can be either unidirectional, where only one of the related entities is aware that the relationship exists, or bidirectional, where both entities are aware of the relationship.
+
+What does "aware" mean? In short, an entity that is aware of a relationship has a field that references the related entity
+
+Directionality:
+1. Unidirectional: Only one side of the relationship is aware of the other.
+2. Bidirectional: Both entities have references to each other, allowing navigation in both directions.
+
+In a unidirectional one-to-one relationship, only one of the entities is aware of and can access the other entity in the relationship. This contrasts with a bidirectional one-to-one relationship, where both entities involved are aware of each other and can mutually access each other's data.
+
+
+Owning Side: The "owner" of the relationship is the entity responsible for managing the foreign key in the database.
+In bi-directional relationships, the side without the "mappedBy" attribute is the owner.
+
+Owning Side vs. Inverse Side: In any bidirectional relationship, one side is the "owning side" and manages the foreign key(s) in the database. The other side is the "inverse side" and uses the "mappedBy" attribute to indicate it does not own the relationship. JPA only considers the owning side when saving or updating relationships.
+
+In JPA entity relationships, there is always an "owner" of the relationship. Figuring out the owner of the relationship is different for uni and bi-directional relationships.
+
+In uni-directional relationships, the owning side is the side that is aware. Whereas in bidirectional relationships, the entity that does not have a mappedBy annotation parameter is the owning side.
+
+
+mappedBy: Used on the non-owning side of a bi-directional relationship to tell JPA that the relationship is managed by the other side.
+
+
+Applicant.java
+@OneToOne(mappedBy = "applicant")
+private Resume resume
+
+{
+  "name": "Sunil",
+  "phone": "9848586878",
+  "status": "InActive",
+  "email": "sunil@gmail.com",
+  "resume": {
+    "content":"resume content"
+  }
+}
+
+@OneToOne(mappedBy = "applicant", cascade = CascadeType.PERSIST)
+
+first Resume should gets saved and then the Applicant
+same should happen for Applicant
+
+Resume resume = applicant.getResume();
+if(resume != null){
+ resume.setApplicant(applicant);
+}
+
+-- infinite loop ---- in bi-directional mapping  - kind of circular dependency
+
+in Resume.java
+@OneToOne
+@JoinColumn(name = "applicantId", nullable = true)
+@JsonIgnore
+private Applicant applicant
+
+
+----------------- Spring REST Approach -------------
+applicant
+/api
+ResumeController - 
+@PostMapping("/{applicatId}/resume")
+public ResponseEntity<Resume> addResume(@PathVariable Long applicantId, @RequestBody Resume resume){
+ return ResponseEntity.ok(resumeService.addResume(applicantId, resume));
+}
+
+Service
+public Resume addResume(Long applicantId, Resume resume){
+ Optional<Applicant> applicantOptional = applicantRepo.findById(applicantId);
+ if(applicanntOptional.isPresent()){
+   Applicant applicant = applicantOptional.get();
+   resume.setApplicant(applicant);
+   return resumeRepository.save(resume);
+ }else{
+   throw new RuntimeException("Applicant not found with ID: "+ applicantId);
+ }
+}
+
+
+------- One-to-Many Mapping -----
+
+An Applicant can make multiple Applications 
+An Applicant may apply for multiple requirements - One Applicant to many Applications map
+An Applicant can have many applications
+
+applications--
+id, status, position, applicantId
+
+@Entity
+@Data
+class Application{
+ private Long id;
+ private String status;
+ private String position;
+
+ @ManyToOne
+ private Applicant applicant;
+}
+
+Applicant.java
+@OneToMany
+private List<Application> applications = new ArrayList<>();
+
+
+
+
+
+
+
+Cascading: Defines which operations (like saving or deleting) should "cascade" from a parent entity to its related children. Commonly used types include PERSIST, MERGE, and REMOVE
+
+
+
+
+Fetch Types: Control how related entities are loaded from the database.
+1. FetchType.LAZY: The related data is only loaded when explicitly accessed (default for @OneToMany and @ManyToMany).
+2. FetchType.EAGER: The related data is loaded immediately along with the primary entity (default for @OneToOne and @ManyToOne).
+
+
+============== One-to-One Bi-Directional :: Person & Passport ================
+
+1. Entity - Person
+
+package com.example.demo.entity;
+
+import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+@Entity
+@Data
+public class Person {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long personId;
+
+    private String personName;
+    private String personGender;
+
+    @OneToOne(mappedBy = "person", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Passport passport;
+
+    // Getters and Setters
+
+    public Long getPersonId() {
+        return personId;
+    }
+
+    public void setPersonId(Long personId) {
+        this.personId = personId;
+    }
+
+    public String getPersonName() {
+        return personName;
+    }
+
+    public void setPersonName(String personName) {
+        this.personName = personName;
+    }
+
+    public String getPersonGender() {
+        return personGender;
+    }
+
+    public void setPersonGender(String personGender) {
+        this.personGender = personGender;
+    }
+
+    public Passport getPassport() {
+        return passport;
+    }
+
+    public void setPassport(Passport passport) {
+        this.passport = passport;
+        passport.setPerson(this); // maintain bi-directional mapping
+    }
+}
+
+
+Entity - Passport
+
+package com.example.demo.entity;
+
+import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import java.time.LocalDate;
+
+@Entity
+public class Passport {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long passportId;
+
+    private String passportNumber;
+    private LocalDate issuedDate;
+    private LocalDate expirayDate;
+
+    @OneToOne
+    @JoinColumn(name = "person_id")
+    @JsonBackReference
+    private Person person;
+
+    // Getters and Setters
+
+    public Long getPassportId() {
+        return passportId;
+    }
+
+    public void setPassportId(Long passportId) {
+        this.passportId = passportId;
+    }
+
+    public String getPassportNumber() {
+        return passportNumber;
+    }
+
+    public void setPassportNumber(String passportNumber) {
+        this.passportNumber = passportNumber;
+    }
+
+    public LocalDate getIssuedDate() {
+        return issuedDate;
+    }
+
+    public void setIssuedDate(LocalDate issuedDate) {
+        this.issuedDate = issuedDate;
+    }
+
+    public LocalDate getExpirayDate() {
+        return expirayDate;
+    }
+
+    public void setExpirayDate(LocalDate expirayDate) {
+        this.expirayDate = expirayDate;
+    }
+
+    public Person getPerson() {
+        return person;
+    }
+
+    public void setPerson(Person person) {
+        this.person = person;
+    }
+}
+
+
+Repository Layer
+
+package com.example.demo.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import com.example.demo.entity.Person;
+
+public interface PersonRepository extends JpaRepository<Person, Long> {
+}
+
+
+package com.example.demo.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import com.example.demo.entity.Passport;
+
+public interface PassportRepository extends JpaRepository<Passport, Long> {
+}
+
+
+Service Layer - Person Service
+
+package com.example.demo.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.example.demo.entity.Person;
+import com.example.demo.repository.PersonRepository;
+
+import java.util.List;
+
+@Service
+public class PersonService {
+
+    @Autowired
+    private PersonRepository personRepository;
+
+    public Person savePerson(Person person) {
+        return personRepository.save(person);
+    }
+
+    public List<Person> getAllPersons() {
+        return personRepository.findAll();
+    }
+
+    public Person getPersonById(Long id) {
+        return personRepository.findById(id).orElse(null);
+    }
+
+    public void deletePerson(Long id) {
+        personRepository.deleteById(id);
+    }
+}
+
+
+ControllerLayer
+
+package com.example.demo.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import com.example.demo.entity.Person;
+import com.example.demo.service.PersonService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/persons")
+public class PersonController {
+
+    @Autowired
+    private PersonService personService;
+
+    @PostMapping
+    public Person createPerson(@RequestBody Person person) {
+        return personService.savePerson(person);
+    }
+
+    @GetMapping
+    public List<Person> getAllPersons() {
+        return personService.getAllPersons();
+    }
+
+    @GetMapping("/{id}")
+    public Person getPersonById(@PathVariable Long id) {
+        return personService.getPersonById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public String deletePerson(@PathVariable Long id) {
+        personService.deletePerson(id);
+        return "Deleted successfully";
+    }
+}
+
+
+JSON Request
+
+1. Create Person with Passport
+
+{
+  "personName": "John",
+  "personGender": "Male",
+  "passport": {
+    "passportNumber": "A1234567",
+    "issuedDate": "2022-01-01",
+    "expirayDate": "2032-01-01"
+  }
+}
+
+
+
+Bi-directional Mapping
+
+Person → Passport
+Passport → Person
+
+✔ mappedBy
+
+Used in Person to indicate non-owning side
+
+✔ Owning Side
+
+Passport owns relationship via @JoinColumn
+
+✔ Cascade
+
+CascadeType.ALL ensures passport saved with person
+
+✔ JSON Handling
+
+@JsonManagedReference & @JsonBackReference prevent infinite recursion
+
+
+==== Add DTO Layer ====
+package com.example.demo.dto;
+
+public class PersonDTO {
+
+    private Long personId;
+    private String personName;
+    private String personGender;
+    private PassportDTO passport;
+
+    // Getters and Setters
+
+    public Long getPersonId() {
+        return personId;
+    }
+
+    public void setPersonId(Long personId) {
+        this.personId = personId;
+    }
+
+    public String getPersonName() {
+        return personName;
+    }
+
+    public void setPersonName(String personName) {
+        this.personName = personName;
+    }
+
+    public String getPersonGender() {
+        return personGender;
+    }
+
+    public void setPersonGender(String personGender) {
+        this.personGender = personGender;
+    }
+
+    public PassportDTO getPassport() {
+        return passport;
+    }
+
+    public void setPassport(PassportDTO passport) {
+        this.passport = passport;
+    }
+}
+
+
+
+package com.example.demo.dto;
+
+import java.time.LocalDate;
+
+public class PassportDTO {
+
+    private Long passportId;
+    private String passportNumber;
+    private LocalDate issuedDate;
+    private LocalDate expirayDate;
+
+    // Getters and Setters
+
+    public Long getPassportId() {
+        return passportId;
+    }
+
+    public void setPassportId(Long passportId) {
+        this.passportId = passportId;
+    }
+
+    public String getPassportNumber() {
+        return passportNumber;
+    }
+
+    public void setPassportNumber(String passportNumber) {
+        this.passportNumber = passportNumber;
+    }
+
+    public LocalDate getIssuedDate() {
+        return issuedDate;
+    }
+
+    public void setIssuedDate(LocalDate issuedDate) {
+        this.issuedDate = issuedDate;
+    }
+
+    public LocalDate getExpirayDate() {
+        return expirayDate;
+    }
+
+    public void setExpirayDate(LocalDate expirayDate) {
+        this.expirayDate = expirayDate;
+    }
+}
+
+
+Mapper Utility (Manual Mapping)
+
+package com.example.demo.mapper;
+
+import com.example.demo.dto.PersonDTO;
+import com.example.demo.dto.PassportDTO;
+import com.example.demo.entity.Person;
+import com.example.demo.entity.Passport;
+
+public class PersonMapper {
+
+    // Entity → DTO
+    public static PersonDTO toDTO(Person person) {
+        if (person == null) return null;
+
+        PersonDTO dto = new PersonDTO();
+        dto.setPersonId(person.getPersonId());
+        dto.setPersonName(person.getPersonName());
+        dto.setPersonGender(person.getPersonGender());
+
+        if (person.getPassport() != null) {
+            PassportDTO passportDTO = new PassportDTO();
+            passportDTO.setPassportId(person.getPassport().getPassportId());
+            passportDTO.setPassportNumber(person.getPassport().getPassportNumber());
+            passportDTO.setIssuedDate(person.getPassport().getIssuedDate());
+            passportDTO.setExpirayDate(person.getPassport().getExpirayDate());
+
+            dto.setPassport(passportDTO);
+        }
+
+        return dto;
+    }
+
+    // DTO → Entity
+    public static Person toEntity(PersonDTO dto) {
+        if (dto == null) return null;
+
+        Person person = new Person();
+        person.setPersonId(dto.getPersonId());
+        person.setPersonName(dto.getPersonName());
+        person.setPersonGender(dto.getPersonGender());
+
+        if (dto.getPassport() != null) {
+            Passport passport = new Passport();
+            passport.setPassportId(dto.getPassport().getPassportId());
+            passport.setPassportNumber(dto.getPassport().getPassportNumber());
+            passport.setIssuedDate(dto.getPassport().getIssuedDate());
+            passport.setExpirayDate(dto.getPassport().getExpirayDate());
+
+            // maintain bi-directional mapping
+            passport.setPerson(person);
+            person.setPassport(passport);
+        }
+
+        return person;
+    }
+}
+
+
+Service Layer
+
+package com.example.demo.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.example.demo.dto.PersonDTO;
+import com.example.demo.entity.Person;
+import com.example.demo.mapper.PersonMapper;
+import com.example.demo.repository.PersonRepository;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class PersonService {
+
+    @Autowired
+    private PersonRepository personRepository;
+
+    public PersonDTO savePerson(PersonDTO dto) {
+        Person person = PersonMapper.toEntity(dto);
+        Person saved = personRepository.save(person);
+        return PersonMapper.toDTO(saved);
+    }
+
+    public List<PersonDTO> getAllPersons() {
+        return personRepository.findAll()
+                .stream()
+                .map(PersonMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public PersonDTO getPersonById(Long id) {
+        return personRepository.findById(id)
+                .map(PersonMapper::toDTO)
+                .orElse(null);
+    }
+
+    public void deletePerson(Long id) {
+        personRepository.deleteById(id);
+    }
+}
+
+
+
+Controller Layer
+
+package com.example.demo.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import com.example.demo.dto.PersonDTO;
+import com.example.demo.service.PersonService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/persons")
+public class PersonController {
+
+    @Autowired
+    private PersonService personService;
+
+    @PostMapping
+    public PersonDTO createPerson(@RequestBody PersonDTO personDTO) {
+        return personService.savePerson(personDTO);
+    }
+
+    @GetMapping
+    public List<PersonDTO> getAllPersons() {
+        return personService.getAllPersons();
+    }
+
+    @GetMapping("/{id}")
+    public PersonDTO getPersonById(@PathVariable Long id) {
+        return personService.getPersonById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public String deletePerson(@PathVariable Long id) {
+        personService.deletePerson(id);
+        return "Deleted successfully";
+    }
+}
+
+
+Sample Request DTO
+
+{
+  "personName": "Alice",
+  "personGender": "Female",
+  "passport": {
+    "passportNumber": "X9876543",
+    "issuedDate": "2023-05-10",
+    "expirayDate": "2033-05-10"
+  }
+}
+
+
+
+MapStruct is the industry-standard way to handle DTO mapping efficiently (compile-time, no reflection, very fast)
+
+Dependencies - mapstruct, mapstruct-processor
+
+
+<dependencies>
+    <!-- MapStruct -->
+    <dependency>
+        <groupId>org.mapstruct</groupId>
+        <artifactId>mapstruct</artifactId>
+        <version>1.5.5.Final</version>
+    </dependency>
+
+    <!-- Annotation Processor -->
+    <dependency>
+        <groupId>org.mapstruct</groupId>
+        <artifactId>mapstruct-processor</artifactId>
+        <version>1.5.5.Final</version>
+        <scope>provided</scope>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <!-- Enable annotation processing -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <configuration>
+                <source>17</source>
+                <target>17</target>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.mapstruct</groupId>
+                        <artifactId>mapstruct-processor</artifactId>
+                        <version>1.5.5.Final</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
+
+Create Mapper Interface 
+
+package com.example.demo.mapper;
+
+import org.mapstruct.*;
+import com.example.demo.dto.PersonDTO;
+import com.example.demo.dto.PassportDTO;
+import com.example.demo.entity.Person;
+import com.example.demo.entity.Passport;
+
+@Mapper(componentModel = "spring")
+public interface PersonMapper {
+
+    // Entity → DTO
+    PersonDTO toDTO(Person person);
+
+    PassportDTO toPassportDTO(Passport passport);
+
+    // DTO → Entity
+    Person toEntity(PersonDTO dto);
+
+    Passport toPassportEntity(PassportDTO dto);
+
+    // Handle bi-directional mapping manually after mapping
+    @AfterMapping
+    default void linkEntities(@MappingTarget Person person) {
+        if (person.getPassport() != null) {
+            person.getPassport().setPerson(person);
+        }
+    }
+}
+
+
+Update Service Layer
+
+package com.example.demo.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.example.demo.dto.PersonDTO;
+import com.example.demo.entity.Person;
+import com.example.demo.mapper.PersonMapper;
+import com.example.demo.repository.PersonRepository;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class PersonService {
+
+    @Autowired
+    private PersonRepository personRepository;
+
+    @Autowired
+    private PersonMapper personMapper;
+
+    public PersonDTO savePerson(PersonDTO dto) {
+        Person person = personMapper.toEntity(dto);
+        Person saved = personRepository.save(person);
+        return personMapper.toDTO(saved);
+    }
+
+    public List<PersonDTO> getAllPersons() {
+        return personRepository.findAll()
+                .stream()
+                .map(personMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public PersonDTO getPersonById(Long id) {
+        return personRepository.findById(id)
+                .map(personMapper::toDTO)
+                .orElse(null);
+    }
+
+    public void deletePerson(Long id) {
+        personRepository.deleteById(id);
+    }
+}
+
+
+MapStruct automatically maps:
+
+

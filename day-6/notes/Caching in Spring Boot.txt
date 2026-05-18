@@ -1,0 +1,437 @@
+====================
+Spring Boot Caching 
+====================
+1. What is Caching
+2. Cache inside Spring Boot
+3. Types of Caching 
+   -> In-memory Caching
+   -> Distributed Caching
+
+4. Annotations used in Caching
+   -> @EnableCaching
+   -> @Cacheable
+   -> @CachePut
+   -> @CachEvict
+   -> @Caching
+
+
+Cache is a part of temporary memory (RAM). 
+It lies between the application and the persistent database.
+
+Caching is a mechanism used to increase the performance of a system. 
+It is a process to store and access data from the cache.
+
+It stores the recently used data. 
+This helps to reduces the number of database hits as much as possible.
+
+Caching in Spring Boot is a mechanism to improve application performance and responsiveness by storing frequently accessed data in a temporary storage location, such as in-memory or a dedicated cache server. 
+
+This reduces the need to repeatedly fetch data from slower sources like databases or external APIs.
+
+
+==> frequently accessed data we are storing it inside a cache so that, we don't have to send the request to a  particular database 
+
+==> we can introduce a cache in between your application and database so it will be a layer between your application and your database - the frequently accessed data we will stored in the cache, so that we can directly return it to user without visiting your database; so database is basically one example 
+
+Why use Caching?
+
+-> Reduce latency: Faster access to data compared to fetching from a database or an external service
+-> Decrease load: Reduce the number of calls to the backend system or other microservice database
+-> Improve Scalability: Helps application handle traffic, loads efficiently
+
+--- PRACTICAL -- - cache-weather-app
+
+dependencies: spring web, Dev Tools, Lombok, Data JPA, H2/MySQL
+
+spring.application.name=cache-weather-app
+spring.datasource.url=jdbc:h2:mem:weatherdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.h2.console.enabled=true
+
+
+package com.cognizant.cache.entities;
+@Entity
+@Data
+@RequiredArgsConstructor
+public class Weather {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String city;
+	private String forecast;
+
+	public Weather(String city, String forecast) {
+		super();
+		this.city = city;
+		this.forecast = forecast;
+	}
+}
+
+
+
+public interface WeatherRepository extends JpaRepository<Weather, Long> {
+    Optional<Weather> findByCity(String city);
+}
+
+
+package com.cognizant.cache.services;
+@Service
+public class WeatherServices {
+
+	private final WeatherRepository weatherRepository;
+
+	public WeatherServices(WeatherRepository weatherRepository) {
+		this.weatherRepository = weatherRepository;
+	}
+
+	public String getWeatherByCity(String city) {
+		System.out.println("Fetching data from DB for city: " + city);
+		Optional<Weather> weather = weatherRepository.findByCity(city);
+		return weather.map(Weather::getForecast).orElse("Weather data not available");
+	}
+}
+
+
+
+@RestController
+@RequestMapping("/weather")
+public class WeatherRestController {
+
+	@Autowired
+	private WeatherServices weatherService;
+
+	@Autowired
+	private WeatherRepository weatherRepository;
+	
+	
+	@PostMapping
+	public Weather addWeather(@RequestBody Weather weather) {
+		return weatherRepository.save(weather);
+	}
+	
+	@GetMapping
+	public String getWeather(@RequestParam String city) {
+		String weatherByCity = weatherService.getWeatherByCity(city);
+		return weatherByCity;
+	}	
+}
+
+
+POST - http://localhost:8080/weather
+
+{
+    "city": "Dubai",
+    "forecast": "Sunny 28C"
+}
+
+
+GET - http://localhost:8080/weather?city=Dubai
+
+
+To understand properly - debug the application and set breakpoints in Controller & Service layer
+call GET multiple times and each time it access the DB
+
+=== PART - 2 ===
+
+-- to enable spring boot caching -
+
+1. on bootstrap class - @EnableCaching
+
+2. steps to create a Bean of type CacheManager in bootstrap class
+   	@Bean
+	public CacheManager cacheManager() {
+	    return new ConcurrentMapCacheManager("weather");
+	}
+
+3. on method of WeatherServices class - @Cacheable
+
+@Cacheable("weather")
+public String getWeatherByCity(String city) {
+ System.out.println("Fetching data from DB for city: " + city);
+ Optional<Weather> weather = weatherRepository.findByCity(city);
+ return weather.map(Weather::getForecast).orElse("Weather data not available");
+}
+
+
+PART - 2
+
+How can we look into Cache? - what exactly happens inside cache
+
+=> create a new Service class - CacheInspectionService.java
+
+@Service
+public class CacheInspectionService {
+
+    @Autowired
+    private CacheManager cacheManager;
+
+    public void printCacheContents(String cacheName) {
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache != null) {
+            System.out.println("Cache Contents:");
+            System.out.println(Objects.requireNonNull(cache.getNativeCache()).toString());
+        } else {
+            System.out.println("No such cache: " + cacheName);
+        }
+    }
+}
+
+
+==> add an endpoint in WeatherRestController.java
+
+    @Autowired
+    CacheInspectionService cacheInspectionService;
+
+    @GetMapping("/cacheData")
+    public void getCacheDate() {
+        cacheInspectionService.printCacheContents("weather");
+    }
+
+
+--- add breakpoints and check 
+--- Cache is stored in ConcurrentHashMap
+--- this is In-Memory Cache
+--- check the limitations of In-Memory cache
+
+
+Part-3 -- add update functionalities
+a) in service class
+
+	public String updateWeather(String city, String updatedWeather) {
+		weatherRepository.findByCity(city).ifPresent(weather -> {
+			weather.setForecast(updatedWeather);
+			weatherRepository.save(weather);
+		});
+		return updatedWeather;
+	}
+
+
+b) in controller
+
+    @PutMapping("/{city}")
+    public String updateWeather(@PathVariable String city, @RequestParam String weatherUpdate) {
+        return weatherService.updateWeather(city, weatherUpdate);
+    }
+
+
+PUT http://localhost:8080/weather/Pune?weatherUpdate=Rainy 12F   ---> record gets updated in DB
+
+try GET -- http://localhost:8080/weather?city=Pune   ---> Issue - we get the old data from cache (not the updated data)
+check in /h2-console
+
+
+Solution -- whenever we update the data - Cache also should be updated - @CachePut("weather")  --- it does 2 things (a) update the data in DB & (b) update the data in cache
+
+	@CachePut("weather")
+	public String updateWeather(String city, String updatedWeather) {
+
+
+-- debug - check and we can see - a new entry is happening into cache -which leads to data in-consistency  - not updating the same entry
+
+-- to overcome that issue - add a key to @CachePut
+@CachePut(value = "weather",key = "#city")
+@Cacheable(value = "weather", key = "#city")
+
+we are providing the same consistent key - key of the ConcurrentHashMap
+
+
+
+--- @CacheEvict ---
+
+1. add delete functionality
+in Service class
+
+	@Transactional
+	public void deleteWeather(String city) {
+		System.out.println("Removing weather data for city: " + city);
+		weatherRepository.deleteByCity(city);
+	}
+
+in controller class
+    @DeleteMapping("/{city}")
+    public String deleteWeather(@PathVariable String city) {
+        weatherService.deleteWeather(city);
+        return "Weather data for " + city + " has been deleted and cache evicted.";
+    }
+
+on service class
+    @Transactional
+    @CacheEvict(value = "weather",key = "#city")
+
+
+
+==============================
+Spring Boot Caching with Redis
+==============================
+1. What is Redis?
+2. Connect Spring Boot App to Redis
+
+https://redis.io/
+https://redis.io/docs/latest/get-started/
+
+Redis is an in-memory data store used by millions of developers as a cache, vector database, document database, streaming engine, and message broker. Redis has built-in replication and different levels of on-disk persistence. It supports complex data types (for example, strings, hashes, lists, sets, sorted sets, and JSON), with atomic operations defined on those data types.
+
+==> Install Redis - https://redis.io/docs/latest/get-started/      
+Run Redis on Docker
+
+
+Practical
+
+1. Install redis docker
+   $ docker run -d --name redis-cache -p 6379:6379 redis
+
+-- to check you can install redis-cli
+$redis-cli ping
+
+
+2. integrate our Spring Boot Application with Redis 
+--application.properties -- telling Spring Boot to make use of Redis not Spring Boot In-Memory cache
+
+spring.cache.type=redis
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
+spring.cache.cache-names=weather
+
+
+3. Run the Application - error: A component required a bean named 'cacheManager' that could not be found - as there is no cache manager
+Solution: add dependency   --- spring-boot-starter-data-redis
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
+Run Application and test it using POSTMAN
+
+In Docker Desktop - Redis-cache container --- Exec
+#redis-cli
+127.0.0.1:6379> ping
+PONG
+
+127.0.0.1:6379> get
+127.0.0.1:6379> get weather
+127.0.0.1:6379> get weather::Pune   (Pune is the Key)
+
+do get mapping and try
+
+127.0.0.1:6379> get weather::Pune
+
+do multiple operations
+
+
+
+
+
+============ Caching in Spring Boot ================
+
+Cache is a part of temporary memory (RAM). It lies between the application and the persistent database.
+
+Caching is a mechanism used to increase the performance of a system. 
+It is a process to store and access data from the cache.
+
+It stores the recently used data. 
+This helps to reduces the number of database hits as much as possible.
+
+Caching in Spring Boot is a mechanism to improve application performance and responsiveness by storing frequently accessed data in a temporary storage location, such as in-memory or a dedicated cache server. 
+
+This reduces the need to repeatedly fetch data from slower sources like databases or external APIs.
+
+
+==== Types of Caching ====
+
+There are four types of caching are as follows :
+
+    In-memory Caching.
+    Database Caching.
+    Web Server Caching.
+    CDN Caching
+
+
+Reference: https://medium.com/vedity/spring-boot-caching-mechanism-8ef901147e60
+
+
+@EnableCaching: - This annotation, placed on a Spring @Configuration class or the main @SpringBootApplication class, enables Spring's caching abstraction. It auto-configures the necessary cache infrastructure, including a CacheManager. If no specific cache provider is configured, Spring Boot defaults to a simple in-memory ConcurrentMapCacheManager
+
+Spring Boot provides several annotations to define caching behavior at the method level:
+
+==> @Cacheable: Indicates that the result of a method invocation should be cached. If the method is called again with the same arguments, the cached value is returned, avoiding method execution. 
+
+==> @CachePut: Indicates that the method should always be executed, and its result should be used to update the cache for a specific key. This is useful for refreshing cached data.
+
+==> @CacheEvict: Indicates that entries associated with the method should be removed from the cache. This is used to invalidate cached data, for example, after an update or deletion. 
+
+
+
+How it Works?
+When a method annotated with @Cacheable is invoked:
+-> Spring checks if a cached value exists for the given key in the specified cache.
+-> If found, the cached value is returned, and the method is not executed.
+-> If not found, the method is executed, and its return value is stored in the cache for future use, associated with the generated key. 
+
+Benefits:
+-> Improved Performance: Reduces latency by serving data from faster cache storage.
+-> Reduced Database Load: Minimizes repeated queries to the persistence layer.
+-> Enhanced Scalability: Allows the application to handle more requests by reducing reliance on external data sources.
+
+
+
+Practical::
+
+1. New spring starter project
+ dependencies: Spring Web, Spring Boot DevTools, Spring Cache Abstraction (spring-boot-starter-cache)
+
+2. On Bootstrap class - @EnableCaching
+
+3. ProductServices.java
+ 
+@Service
+public class ProductServices {
+
+    @Cacheable(value = "products", key = "#id")
+    public String getProductById(Long id) {
+        // Simulate a time-consuming operation (e.g., database call)
+        try {
+            Thread.sleep(7000); // Simulate 7-second delay
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return "Product Name for ID: " + id +", is Mobile Phone";
+    }
+}
+
+@Cacheable -  It is a method level annotation. It is used in the method whose response is to be cached. The Spring boot manages the request and response of the method to the cache that is specified in the annotation attribute.
+
+@Cacheable(value="employees")   -- @Cacheable(cachNames="employees")
+- cacheNames is used to specify the name of the cache while value specifies the alias for the cacheNames
+
+key :- This is the key with which object will be cached. It uniquely identifies each entry in the cache. If we do not specify the key then Spring uses the default mechanism to create the key.
+
+For example,
+@Cacheable(value="employees", key="#id")
+
+the following method will be cached if the argument name has length less than 20.
+@Cacheable(value="employees", condition="#name.length < 20")
+public Employee findByName(String name) {
+  // some code
+}
+
+
+4. ProductsController.java
+
+@RestController
+public class ProductsController {
+	private ProductServices prodServices;
+	
+	public ProductsController(ProductServices prodServices) {
+		super();
+		this.prodServices = prodServices;
+	}
+	
+	@GetMapping("/pms/{id}")
+	public ResponseEntity<?> findProductById(@PathVariable Long id){
+		String response = prodServices.getProductById(id);
+		return ResponseEntity.ok().body(response);
+	}
+}

@@ -1,0 +1,1 @@
+CREATE TABLE products(name varchar(100), price float(10,2));

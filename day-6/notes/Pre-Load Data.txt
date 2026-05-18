@@ -1,0 +1,73 @@
+=====================================
+Pre-Load Data in Spring Boot Data JPA
+=====================================
+
+You can preload data in Spring Data JPA using two primary methods:
+
+1. SQL scripts (schema.sql and data.sql) for simple data seeding, or 
+2. Java-based initialization using CommandLineRunner or ApplicationRunner for more complex scenarios
+
+
+Method 1: Using SQL Scripts (Recommended for simple data)
+Spring Boot can automatically detect and run SQL files during application startup to initialize the database schema and data
+
+
+1. Create the SQL files in the src/main/resources folder:
+   >> schema.sql: Contains the DDL (Data Definition Language) to create tables.
+   >> data.sql: Contains the DML (Data Manipulation Language) to insert initial data.
+
+Add following SQL in schema.sql:
+CREATE TABLE products(name varchar(100), price float(10,2));
+
+Add data to data.sql:
+
+INSERT INTO products (name, price) VALUES('Product A', 10.0);
+INSERT INTO products (name, price) VALUES('Product B', 20.0);
+
+2. Configure application.properties:
+
+  spring.sql.init.mode=always
+  #SQL script-based database initialization should continue when an error occurs during execution
+  spring.sql.init.continue-on-error=true
+  
+  # Ensure JPA operations wait for the data source to be initialized
+  #spring.jpa.defer-datasource-initialization=true 
+
+
+For Spring Boot versions before 2.5.0, you would use spring.datasource.initialization-mode=always
+
+
+
+Method 2: Using Java Beans (CommandLineRunner)
+
+1. Create a component class that implements the CommandLineRunner interface.
+2. Inject your repositories and use their save() methods within the run method. 
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+import com.example.repository.ProductRepository;
+import com.example.model.Product;
+
+@Component
+public class DataInitializer implements CommandLineRunner {
+
+    private final ProductRepository productRepository;
+
+    public DataInitializer(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        // Preload data using the repository's save method
+        if (productRepository.count() == 0) { // Optional: Check if data already exists
+            productRepository.save(new Product("Product A", 10.0));
+            productRepository.save(new Product("Product B", 20.0));
+            System.out.println("Initial products preloaded.");
+        }
+    }
+}
+
+
+This class will execute its run method automatically once the Spring application context has loaded and all beans are initialized
+
