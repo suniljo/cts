@@ -1,0 +1,1628 @@
+AOP
+===
+Aspect Oriented Programming (AOP) compliments OOPs in the sense that it also provides modularity. But the key unit of modularity is aspect than class.
+
+AOP breaks the program logic into distinct parts (called concerns). It is used to increase modularity by cross-cutting concerns.
+
+A cross-cutting concern is a concern that can affect the whole application and should be centralized in one location in code as possible, such as transaction management, authentication, logging, security, auditing etc.
+
+Why use AOP?
+
+It provides the pluggable way to dynamically add the additional concern before, after or around the actual logic. Suppose there are 10 methods in a class as given below:
+
+    class BusinessService{  
+    	public void m1(){...}  
+   	public void m2(){...}  
+   	public void m3(){...}  
+   	
+   	 public void n1(){...}  
+  	 public void n2(){...}  
+
+  	public void p1(){...}  
+  	public void p2(){...}  
+   	public void p3(){...}  
+    }  
+There are 3 methods that starts with "m", 2 methods that starts with "n" and 3 methods that starts with "p".
+
+Understanding Scenario :: I have to maintain log and send notification after calling methods that starts from "m".
+
+Problem without AOP :: We can call methods (that maintains log and sends notification) from the methods starting with m. In such scenario, we need to write the code in all the 3 methods.
+
+But, if client says in future, I don't have to send notification, you need to change all the methods. It leads to the maintenance problem.
+
+Solution with AOP :: We don't have to call methods from the method. Now we can define the additional concern like maintaining log, sending notification etc. not in the method of a class. It has to be maintained by spring container (by mentioning in spring configuration file or by using @Aspect)
+
+In future, if client says to remove the notifier functionality, we need to change only in the xml file. So, maintenance is easy in AOP.
+
+Where use AOP?
+
+AOP is mostly used in following cases:
+
+    - to provide declarative enterprise services such as declarative transaction management.
+    - It allows users to implement custom aspects.
+
+
+A layered approach is typically used to build applications:
+ -> Web Layer - View logic for web apps OR JSON conversion for REST API
+ -> Business Layer/ Service Layer - Business Logic
+ -> Repository Layer/ Data Layer - Persistence Logic
+
+Each layer has different responsibilities
+ HOWEVER, there are a few common aspects that apply to all layers like
+  Security,   Performance,   Logging etc    
+These common aspects are called Cross Cutting Concerns
+Aspect Oriented Programming can be used to implement Cross Cutting Concerns
+
+
+TWO Popular AOP Frameworks
+ a) Spring AOP
+	NOT a complete AOP solution BUT very popular
+	Only works with Spring Beans
+	Example: Intercept method calls to Spring Beans
+
+ b) AspectJ
+	Complete AOP solution BUT rarely used
+	Example: Intercept any method call on any Java class
+	Example: Intercept change of values in a field
+
+===========================================================================
+
+Aspect Oriented Programming (AOP) compliments OOPs in the sense that it also provides modularity. But the key unit of modularity is aspect than class.
+
+AOP breaks the program logic into distinct parts (called concerns). It is used to increase modularity by cross-cutting concerns.
+
+A cross-cutting concern is a concern that can affect the whole application and should be centralized in one location in code as possible, such as transaction management, authentication, logging, security, auditing etc.
+
+Why use AOP?
+
+It provides the pluggable way to dynamically add the additional concern before, after or around the actual logic.
+
+
+AOP Terminology
+---------------
+1) Aspect -> a modularization of a concern that cuts across multiple classes. Transaction management is a good example of a crosscutting concern in J2EE applications. In Spring AOP, aspects are implemented using regular classes (the schema-based approach) or regular classes annotated with the @Aspect annotation (the @AspectJ style))
+
+Aspect is crosscutting concern. One aspect can lie in multiple objects.
+
+2) Join point: Join point is a point that represents the execution of a method.
+it represents where secondary logic should integrate with the primary logic
+Spring AOP supports method level joinpoint.
+When pointcut condition is true, the advice is executed. A specific execution instance of an advice is called a Join Point.
+
+At run time, the point at which, when the conditions are met i.e. when the Pointcut is met & advice is being executed, it is referred to as JoinPoints.
+
+3) Advice: Advice is an action taken by aspect. (when & what). 
+           -> action taken by an aspect at a particular join point. Different types of advice include "around," "before" and "after" advice. Many AOP frameworks, including Spring, model an advice as an interceptor, maintaining a chain of interceptors around the join point.
+
+4) Pointcut: what are the method calls that need to be intercepted.
+it represents for which business methods secondary logic should be applied. 
+Advice is nothing but, what are the action that needs to be done when a Pointcut is met.
+A scenario which matches to join point.
+
+5) Weaving : the process of combining Target and Aspect is called as Weaving. Weaver is the framework that implements AOP, AspectJ or Spring AOP Runtime
+-> linking aspects with other application types or objects to create an advised object. This can be done at compile time (using the AspectJ compiler, for example), load time, or at runtime. Spring AOP, like other pure Java AOP frameworks, performs weaving at runtime.
+
+
+6) Proxy : an object created by the AOP framework in order to implement the aspect contracts (advise method executions and so on). In the Spring Framework, an AOP proxy will be a JDK dynamic proxy or a CGLIB proxy.
+
+
+
+AOP Implementations
+-------------------
+AOP implementations are provided by:
+
+> AspectJ
+> Spring AOP
+> JBoss AOP
+
+
+4 types of advices supported in spring
+
+> Before Advice - it is executed before the actual method call.
+> After Advice - it is executed after the actual method call. If method returns a value, it is executed after returning value.
+> Around Advice - it is executed before and after the actual method call.
+> Throws Advice - it is executed if actual method throws exception.
+
+
+Annotations Used:
+
+1. @Aspect declares the class as aspect.
+2. @Pointcut declares the pointcut expression.
+
+The annotations used to create advices are given below:
+
+1. @Before declares the before advice. It is applied before calling the actual method.
+2. @After declares the after advice. It is applied after calling the actual method and before returning result.
+3. @AfterReturning declares the after returning advice. It is applied after calling the actual method and before returning result. But you can get the result value in the advice.
+4. @Around declares the around advice. It is applied before and after calling the actual method.
+5. @AfterThrowing declares the throws advice. It is applied if actual method throws exception.
+
+
+
+
+================ Spring Boot Example =======================
+1. in Library Management application add a dependency: spring-boot-starter-aop
+
+2. application.properties
+
+logging.level.root=warn
+logging.level.com.cognizant=info
+logging.level.org.springframework.web=warn
+logging.level.org.hibernate=error
+
+
+logging.file.name=./logs/app.log
+
+3. LoggingAspect.java
+
+package com.cognizant.library.aspect;
+@Aspect
+@Component
+@Slf4j
+public class LoggingAspect {
+	// Pointcut expression to match all methods in the com.example.service package
+	@Before("execution(* com.cognizant.library.services.*.*(..))")
+	public void logBeforeMethodExecution(JoinPoint joinPoint) {
+		String methodName = joinPoint.getSignature().getName();
+		System.out.println("LOGGING ASPECT: Before executing method: " + methodName);
+		log.info("LOGGING ASPECT: Before executing method: {}", methodName);
+	}
+}
+
+Adding After Advice
+
+	@After("execution(* com.cognizant.library.services.LibraryServices.saveNewBook(..))")
+	public void logAfterExecution(JoinPoint joinPoint) {
+		String methodName = joinPoint.getSignature().getName();
+		log.info("LOGGING ASPECT: After executing method: {}", methodName);
+	}
+
+Adding Around Advice
+
+    // Pointcut matches all methods in the service package
+    @Around("execution(* com.cognizant.library.services.LibraryServices.saveNewBook(..))")
+    public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.currentTimeMillis();
+
+        // 1. Logic before method execution
+        System.out.println("Starting execution: " + joinPoint.getSignature());
+
+        try {
+            // 2. Proceed with the actual method execution
+            Object result = joinPoint.proceed();
+            
+            // 3. Logic after successful execution
+            long executionTime = System.currentTimeMillis() - start;
+            System.out.println(joinPoint.getSignature() + " completed in " + executionTime + "ms");
+            
+            return result;
+        } catch (Throwable throwable) {
+            // 4. Logic if an exception occurs
+            System.err.println("Method failed: " + joinPoint.getSignature());
+            throw throwable;
+        }
+    }
+}
+=================================================================
+
+Spring AOP Example
+------------------
+4 types of advices supported in spring
+
+> Before Advice - it is executed before the actual method call.
+> After Advice - it is executed after the actual method call. If method returns a value, it is executed after returning value.
+> Around Advice - it is executed before and after the actual method call.
+> Throws Advice - it is executed if actual method throws exception.
+
+All are interfaces in AOP
+
+MethodBeforeAdvice interface extends the BeforeAdvice interface.
+
+AfterReturningAdvice interface extends the AfterAdvice interface.
+
+ThrowsAdvice interface extends the AfterAdvice interface.
+
+MethodInterceptor interface extends the Interceptor interface. It is used in around advice.
+
+-----------------------------------------------------------------------------------------------------
+dependency: spring-context
+
+package com.wipro.aop.services;
+public class ReportGenerator {
+	public void generateExcelReport() {		
+		System.out.println("logic to generate excel report!!!");
+	}
+	
+	public void generateExcelReport(String fileName, String fileType) {		
+		System.out.println("logic to generate excel report with custom file type and name!!!");
+	}
+	
+	public boolean generateExcelReport(String fileName) {		
+		System.out.println("logic to generate excel report with custom file name!!!");
+		return new Random().nextBoolean();
+	}	
+}
+
+package com.wipro.aop.aspects;
+public class LoggingAspect implements MethodBeforeAdvice {
+
+	public void before(Method method, Object[] args, Object target) throws Throwable {
+		System.out.println("Starting Execution of \"" + method.getName() + "()\" with " + args.length + " arguments");		
+	}
+		
+}
+
+aop-beans.xml
+
+	<bean id="reportGen" class="com.wipro.aop.services.ReportGenerator"/>
+	<bean id="logAsp" class="com.wipro.aop.aspects.LoggingAspect"/>
+	
+	<bean id="proxy" class="org.springframework.aop.framework.ProxyFactoryBean">
+		<property name="target" ref="reportGen"/>
+		<property name="interceptorNames">
+			<list>
+				<value>logAsp</value>
+			</list>
+		</property>
+	</bean>
+
+
+ApplicationContext context = new ClassPathXmlApplicationContext("aop-beans.xml");
+		
+ReportGenerator repGen = (ReportGenerator) context.getBean("proxy");
+		
+repGen.generateExcelReport();
+System.out.println();
+repGen.generateExcelReport("wiproHibBatch", "pdf");
+System.out.println();
+repGen.generateExcelReport("wiproSpringBatch.xlsx");
+((AbstractApplicationContext)context).close();
+
+-----------------------------------------------------------------------------------------------------
+
+1) MethodBeforeAdvice Example
+
+a) A.java
+
+A.java
+
+package co.edureka;  
+public class A 
+{  
+ public void m()
+ {
+  System.out.println("actual business logic");
+ } 
+}  
+
+b) BeforeAdvisor.java
+
+package co.edureka;  
+import java.lang.reflect.Method;  
+import org.springframework.aop.MethodBeforeAdvice;  
+
+public class BeforeAdvisor implements MethodBeforeAdvice
+{  
+public void before(Method method, Object[] args, Object target)throws Throwable 
+{  
+System.out.println("additional concern before actual logic");  
+}  
+}  
+
+c) applicationContext.xml
+
+<?xml version="1.0" encoding="UTF-8"?>  
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"	xsi:schemaLocation="http://www.springframework.org/schema/beans 	http://www.springframework.org/schema/beans/spring-beans.xsd">
+      
+<bean id="obj" class="co.edureka.A"></bean>  
+<bean id="ba" class="co.edureka.BeforeAdvisor"></bean>  
+      
+<bean id="proxy" class="org.springframework.aop.framework.ProxyFactoryBean">  
+     <property name="target" ref="obj"></property>  
+     <property name="interceptorNames">  
+     <list>  
+       <value>ba</value>  
+     </list>  
+    </property>  
+</bean>  
+</beans>  
+
+The ProxyFactoryBean class is provided by Spring Famework. It contains 2 properties target and interceptorNames. The instance of A class will be considered as target object and the instance of advisor class as interceptor. You need to pass the advisor object as the list object as in the xml file given above.
+
+Test.java
+
+package co.edureka;  
+
+public class Test 
+{  
+public static void main(String[] args) 
+{  
+ApplicationContext ctx=new ClassPathXmlApplicationContext("applicationContext.xml");  
+ A a=ctx.getBean("proxy",A.class);  
+a.m();  
+}  
+}  
+
+
+
+public class BeforeAdvisor implements MethodBeforeAdvice
+{  
+public void before(Method method, Object[] args, Object target)throws Throwable 
+{  
+  System.out.println("additional concern before actual logic");  
+  System.out.println("method info:"+method.getName()+" "+method.getModifiers());  
+  System.out.println("argument info:");  
+  for(Object arg:args)  
+  {
+            System.out.println(arg);  
+  }
+  System.out.println("target Object:"+target);  
+  System.out.println("target object class name: "+target.getClass().getName());  
+ }  
+}  
+
+public class Test {  
+public static void main(String[] args) {  
+    Resource r=new ClassPathResource("applicationContext.xml");  
+    BeanFactory factory=new XmlBeanFactory(r);  
+      
+    A a=factory.getBean("proxy",A.class);  
+        System.out.println("proxy class name: "+a.getClass().getName());  
+    a.m();  
+}  
+}  
+
+****************************
+2) AfterReturningAdvice Example
+
+AfterAdvisor.java
+
+package co.edureka;  
+import java.lang.reflect.Method;  
+import org.springframework.aop.AfterReturningAdvice;  
+public class AfterAdvisor implements AfterReturningAdvice
+{  
+@Override  
+public void afterReturning(Object returnValue, Method method,Object[] args, Object target) throws Throwable 
+{  
+System.out.println("additional concern after returning advice");  
+}  
+}  
+*************************************
+
+3) MethodInterceptor (AroundAdvice) Example
+
+AroundAdvisor.java
+
+package co.edureka;  
+import org.aopalliance.intercept.MethodInterceptor;  
+import org.aopalliance.intercept.MethodInvocation;  
+public class AroundAdvisor implements MethodInterceptor
+{  
+@Override  
+public Object invoke(MethodInvocation mi) throws Throwable 
+{  
+Object obj;  
+System.out.println("additional concern before actual logic");  
+obj=mi.proceed();  
+System.out.println("additional concern after actual logic");  
+return obj;  
+}  
+}  
+
+4) ThrowsAdvice Example
+
+Validator.java
+
+package co.edureka;  
+public class Validator 
+{  
+public void validate(int age)throws Exception
+{  
+if(age<18){  
+  throw new ArithmeticException("Not Valid Age");  
+}  
+else{  
+  System.out.println("vote confirmed");  
+}  
+}  
+}  
+
+ThrowsAdvisor.java
+
+package co.edureka;  
+import org.springframework.aop.ThrowsAdvice;  
+public class ThrowsAdvisor implements ThrowsAdvice
+{  
+public void afterThrowing(Exception ex)
+{  
+System.out.println("additional concern if exception occurs");  
+}  
+}  
+
+
+********************************
+
+Spring AOP
+=========
+
+AOP Terminology
+
+1) Aspect: Aspect is crosscutting concern. One aspect can lie in multiple objects.
+
+2) Join point: Join point is a point that represents the execution of a method.
+
+3) Advice: Advice is an action taken by aspect. (when & what)
+
+4) Pointcut: A scenario which matches to join point.
+
+5) Target object: If an object is advised by more than one aspect, that object is called target object. This is also referred as advised object.
+
+6) Weaving: Linking aspects to other application objects to create an advised object. 
+
+*************************
+Spring AspectJ
+--------------
+1) Create a New Java Project in Eclipse
+
+2) Create a New Package : co.edureka
+
+3) Convert to Maven Project
+Right click on Project > Configure > Convert To Maven Project
+Group ID : co.edureka
+Artifact ID : Aspectj
+
+Add Dependencies to pom.xml
+
+mvnrepository.com
+
+Dependencies > Springframework [context, aspects]
+
+pom.xml
+
+<dependencies>
+  <dependency>	
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context</artifactId>
+    <version>5.2.8.RELEASE</version>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-aspects</artifactId>
+    <version>5.2.8.RELEASE</version>
+  </dependency>  	
+</dependencies>
+<build>
+
+4) Create Bean Class
+
+package co.edureka;
+public class Banking{
+  public void deposit(){
+    System.out.println("Depositing Amount!");
+  }
+  public void deposit(String acno, double amt) {
+    System.out.println("Depositing amount Rs. "+amt+" in A/C: "+acno);
+  }	
+}
+
+5) Create a New class - Logger
+package co.edureka;
+class Logger{
+ public void log(){
+  System.out.println("LOG: Going to deposit amount");
+ }
+}
+
+6) Create a Spring Bean Configuration file - context.xml
+
+include aop namespace
+
+xmlns:aop="http://www.springframework.org/schema/aop"
+
+> create beans for co.edureka.Banking & co.edureka.Logger
+	<bean id="bank" class="co.edureka.Banking" />
+	<bean id="logger" class="co.edureka.Logger" />
+
+> aop (tab) > beans > right click and click on "Insert <aop:config> element"
+
+> config > right click > insert aop:pointcut   id : bankpoint expression : execution(void co.edureka.Banking.deposit(..))
+
+> config > right click > insert aop:aspect  id: loggeraspect	ref=logger
+
+> aspect > right click > insert aop:before element ::  pointcut-ref: bankpoint	method: log
+
+
+<bean id="bank" class="co.edureka.Banking" />
+<bean id="logger" class="co.edureka.Logger" />
+
+<aop:config>
+  <aop:pointcut expression="execution(void co.edureka.Banking.deposit(..))" id="bankpoint" />
+    <aop:aspect id="loggeraspect" ref="log">
+       <aop:before method="log" pointcut-ref="bankpoint" />
+    </aop:aspect>
+</aop:config>
+
+OR
+
+<aop:config>
+  <aop:aspect ref="logger" id="loggeraspect">
+     <aop:before method="log" pointcut="execution(void co.edureka.Banking.deposit())" />
+  </aop:aspect>
+</aop:config>
+
+
+Main.java
+---------
+package co.edureka;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class Main 
+{
+ public static void main(String[] args) 
+ {
+  ApplicationContext context=new ClassPathXmlApplicationContext("context.xml");
+  Banking bank = (Banking)context.getBean("bank");
+  bank.deposit();
+  bank.deposit("SBIN123456",75000.0);
+ }
+}
+
+
+
+
+
+
+Annotation Based Aspects
+------------------------
+add context namespace
+xmlns:context
+
+<context:annotation-config />
+<context:component-scan base-package="co.edureka" />
+<aop:aspectj-autoproxy/>
+
+@Aspect
+@Component
+class Logger{
+ @Before("execution(void co.edureka.Camera.snap())")
+ public void aboutToTakePhoto(){
+   sysout("About to Take photo");
+}
+}
+
+@Component
+public class Camera{
+  public void snap(){
+    System.out.println("SNAP");
+}
+}
+	OR
+In Logger class
+
+@Pointcut("execution(void co.edureka.Camera.snap())")
+public void cameraSnap(){
+}
+
+@Before("cameraSnap")
+ public void aboutToTakePhoto(){
+   sysout("About to Take photo");
+}
+
+Wildcard in Pointcut Expressions
+
+@Pointcut("execution(void co.edureka.Camera.snap(..))")
+@Pointcut("execution(String co.edureka.Camera.snap(String))")
+@Pointcut("execution(* co.edureka.Camera.snap(String))")
+**************************
+
+
+Spring AOP AspectJ Annotation
+-----------------------------------
+
+The Spring Framework recommends you to use Spring AspectJ AOP implementation over the Spring 1.2 old style dtd based AOP implementation because it provides you more control and it is easy to use.
+
+There are two ways to use Spring AOP AspectJ implementation:
+
+> By annotation
+> By xml configuration (schema based)
+Spring AspectJ AOP implementation provides many annotations:
+
+    @Aspect declares the class as aspect.
+    @Pointcut declares the pointcut expression.
+
+The annotations used to create advices are given below:
+
+    @Before declares the before advice. It is applied before calling the actual method.
+    @After declares the after advice. It is applied after calling the actual method and before returning result.
+    @AfterReturning declares the after returning advice. It is applied after calling the actual method and before returning result. But you can get the result value in the advice.
+    @Around declares the around advice. It is applied before and after calling the actual method.
+    @AfterThrowing declares the throws advice. It is applied if actual method throws exception.
+
+
+
+Pointcut is an expression language of Spring AOP.
+
+The @Pointcut annotation is used to define the pointcut. We can refer the pointcut expression by name also. 
+
+    @Pointcut("execution(* Operation.*(..))")  
+    private void doSomething() {}  
+
+The name of the pointcut expression is doSomething(). It will be applied on all the methods of Operation class regardless of return type
+
+
+    @Pointcut("execution(public * *(..))")  
+
+It will be applied on all the public methods.
+
+    @Pointcut("execution(public Operation.*(..))")  
+
+It will be applied on all the public methods of Operation class.
+
+    @Pointcut("execution(* Operation.*(..))")  
+
+It will be applied on all the methods of Operation class.
+
+    @Pointcut("execution(public Employee.set*(..))")  
+
+It will be applied on all the public setter methods of Employee class.
+
+    @Pointcut("execution(int Operation.*(..))")  
+
+It will be applied on all the methods of Operation class that returns int value
+
+
+
+1) @Before Example
+
+The AspectJ Before Advice is applied before the actual business logic method. You can perform any operation here such as conversion, authentication etc.
+
+
+Operation.java
+
+package co.edureka;  
+public  class Operation
+{  
+  public void msg(){System.out.println("msg method invoked");}  
+  public int m(){System.out.println("m method invoked");return 2;}  
+  public int k(){System.out.println("k method invoked");return 3;}  
+}  
+
+Now, create the aspect class that contains before advice.
+
+File: TrackOperation.java
+
+package co.edureka;  
+      
+import org.aspectj.lang.JoinPoint;  
+import org.aspectj.lang.annotation.Aspect;  
+import org.aspectj.lang.annotation.Before;  
+import org.aspectj.lang.annotation.Pointcut;  
+     
+@Aspect  
+public class TrackOperation
+{  
+   @Pointcut("execution(* Operation.*(..))")  
+      public void k(){}//pointcut name  
+          
+   @Before("k()")//applying pointcut on before advice  
+        public void myadvice(JoinPoint jp)//it is advice (before advice)  
+        {  
+            System.out.println("additional concern");  
+            //System.out.println("Method Signature: "  + jp.getSignature());  
+        }  
+    }  
+
+Now create the applicationContext.xml file that defines beans.
+File: applicationContext.xml
+
+    <?xml version="1.0" encoding="UTF-8"?>  
+    <beans xmlns="http://www.springframework.org/schema/beans"  
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+        xmlns:aop="http://www.springframework.org/schema/aop"   
+           xsi:schemaLocation="http://www.springframework.org/schema/beans   
+           http://www.springframework.org/schema/beans/spring-beans.xsd   
+           http://www.springframework.org/schema/aop   
+           http://www.springframework.org/schema/aop/spring-aop.xsd">  
+      
+      
+        <bean id="opBean" class="co.edureka.Operation">   </bean>  
+        <bean id="trackMyBean" class="co.edureka.TrackOperation"></bean>  
+          
+        <bean class="org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator"></bean>  
+              
+    </beans>  
+
+
+File: Test.java
+
+    package co.edureka;  
+      
+    import org.springframework.context.ApplicationContext;  
+    import org.springframework.context.support.ClassPathXmlApplicationContext;  
+    public class Test{  
+        public static void main(String[] args){  
+            ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");  
+            Operation e = (Operation) context.getBean("opBean");  
+            System.out.println("calling msg...");  
+            e.msg();  
+            System.out.println("calling m...");  
+            e.m();  
+            System.out.println("calling k...");  
+            e.k();  
+        }  
+    }  
+
+
+
+
+
+2) @After Example
+
+The AspectJ after advice is applied after calling the actual business logic methods. It can be used to maintain log, security, notification etc.
+
+Here, We are assuming that Operation.java, applicationContext.xml and Test.java files are same as given in @Before example.
+
+Create the aspect class that contains after advice.
+File: TrackOperation.java
+
+    package co.edureka;  
+      
+    import org.aspectj.lang.JoinPoint;  
+    import org.aspectj.lang.annotation.Aspect;  
+    import org.aspectj.lang.annotation.After;  
+    import org.aspectj.lang.annotation.Pointcut;  
+      
+    @Aspect  
+    public class TrackOperation{  
+        @Pointcut("execution(* Operation.*(..))")  
+        public void k(){}//pointcut name  
+          
+        @After("k()")//applying pointcut on after advice  
+        public void myadvice(JoinPoint jp)//it is advice (after advice)  
+        {  
+            System.out.println("additional concern");  
+            //System.out.println("Method Signature: "  + jp.getSignature());  
+        }  
+    }  
+
+Output
+
+    calling msg...  
+    msg() method invoked  
+    additional concern  
+    calling m...  
+    m() method invoked  
+    additional concern  
+    calling k...  
+    k() method invoked  
+    additional concern  
+
+You can see that additional concern is printed after calling msg(), m() and k() methods.
+3) @AfterReturning Example
+
+By using after returning advice, we can get the result in the advice.
+
+Create the class that contains business logic.
+File: Operation.java
+
+    package co.edureka;  
+    public  class Operation{  
+        public int m(){System.out.println("m() method invoked");return 2;}  
+        public int k(){System.out.println("k() method invoked");return 3;}  
+    }  
+
+Create the aspect class that contains after returning advice.
+File: TrackOperation.java
+
+    package co.edureka;  
+      
+    import org.aspectj.lang.JoinPoint;  
+    import org.aspectj.lang.annotation.AfterReturning;  
+    import org.aspectj.lang.annotation.Aspect;  
+      
+    @Aspect  
+    public class TrackOperation{  
+        @AfterReturning(  
+                  pointcut = "execution(* Operation.*(..))",  
+                  returning= "result")  
+                    
+        public void myadvice(JoinPoint jp,Object result)//it is advice (after returning advice)  
+        {  
+            System.out.println("additional concern");  
+            System.out.println("Method Signature: "  + jp.getSignature());  
+            System.out.println("Result in advice: "+result);  
+            System.out.println("end of after returning advice...");  
+        }  
+    }  
+
+File: applicationContext.xml
+
+It is same as given in @Before advice example
+File: Test.java
+
+Now create the Test class that calls the actual methods.
+
+    package co.edureka;  
+      
+    import org.springframework.context.ApplicationContext;  
+    import org.springframework.context.support.ClassPathXmlApplicationContext;  
+    public class Test{  
+        public static void main(String[] args){  
+            ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");  
+            Operation e = (Operation) context.getBean("opBean");  
+            System.out.println("calling m...");  
+            System.out.println(e.m());  
+            System.out.println("calling k...");  
+            System.out.println(e.k());  
+        }  
+    }  
+
+
+
+4) @Around Example
+
+The AspectJ around advice is applied before and after calling the actual business logic methods.
+
+Here, we are assuming that applicationContext.xml file is same as given in @Before example.
+
+Create a class that contains actual business logic.
+File: Operation.java
+
+    package co.edureka;  
+    public  class Operation{  
+        public void msg(){System.out.println("msg() is invoked");}  
+        public void display(){System.out.println("display() is invoked");}  
+    }  
+
+Create the aspect class that contains around advice.
+
+You need to pass the PreceedingJoinPoint reference in the advice method, so that we can proceed the request by calling the proceed() method.
+File: TrackOperation.java
+
+    package co.edureka;  
+    import org.aspectj.lang.ProceedingJoinPoint;  
+    import org.aspectj.lang.annotation.Around;  
+    import org.aspectj.lang.annotation.Aspect;  
+    import org.aspectj.lang.annotation.Pointcut;  
+      
+    @Aspect  
+    public class TrackOperation  
+    {  
+        @Pointcut("execution(* Operation.*(..))")  
+        public void abcPointcut(){}  
+          
+        @Around("abcPointcut()")  
+        public Object myadvice(ProceedingJoinPoint pjp) throws Throwable   
+        {  
+            System.out.println("Additional Concern Before calling actual method");  
+            Object obj=pjp.proceed();  
+            System.out.println("Additional Concern After calling actual method");  
+            return obj;  
+        }  
+    }  
+
+File: Test.java
+
+Now create the Test class that calls the actual methods.
+
+    package co.edureka;  
+    import org.springframework.context.ApplicationContext;  
+    import org.springframework.context.support.ClassPathXmlApplicationContext;  
+    public class Test{  
+        public static void main(String[] args){  
+            ApplicationContext context = new classPathXmlApplicationContext("applicationContext.xml");  
+              
+            Operation op = (Operation) context.getBean("opBean");  
+            op.msg();  
+            op.display();  
+        }  
+    }  
+
+Output
+
+    Additional Concern Before calling actual method  
+    msg() is invoked  
+    Additional Concern After calling actual method  
+    Additional Concern Before calling actual method  
+    display() is invoked  
+    Additional Concern After calling actual method  
+
+You can see that additional concern is printed before and after calling msg() and display methods.
+5) @AfterThrowing Example
+
+By using after throwing advice, we can print the exception in the TrackOperation class. Let's see the example of AspectJ AfterThrowing advice.
+
+Create the class that contains business logic.
+File: Operation.java
+
+    package co.edureka;  
+    public  class Operation{  
+        public void validate(int age)throws Exception{  
+        if(age<18){  
+            throw new ArithmeticException("Not valid age");  
+        }  
+        else{  
+            System.out.println("Thanks for vote");  
+        }  
+        }  
+          
+    }  
+
+Create the aspect class that contains after throwing advice.
+
+Here, we need to pass the Throwable reference also, so that we can intercept the exception here.
+File: TrackOperation.java
+
+    package co.edureka;  
+    import org.aspectj.lang.JoinPoint;  
+    import org.aspectj.lang.annotation.AfterThrowing;  
+    import org.aspectj.lang.annotation.Aspect;  
+    @Aspect  
+    public class TrackOperation{  
+        @AfterThrowing(  
+                  pointcut = "execution(* Operation.*(..))",  
+                  throwing= "error")  
+                    
+        public void myadvice(JoinPoint jp,Throwable error)//it is advice  
+        {  
+            System.out.println("additional concern");  
+            System.out.println("Method Signature: "  + jp.getSignature());  
+            System.out.println("Exception is: "+error);  
+            System.out.println("end of after throwing advice...");  
+        }  
+    }  
+
+File: applicationContext.xml
+
+It is same as given in @Before advice example
+File: Test.java
+
+Now create the Test class that calls the actual methods.
+
+    package co.edureka;  
+      
+    import org.springframework.context.ApplicationContext;  
+    import org.springframework.context.support.ClassPathXmlApplicationContext;  
+    public class Test{  
+        public static void main(String[] args){  
+            ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");  
+            Operation op = (Operation) context.getBean("opBean");  
+            System.out.println("calling validate...");  
+            try{  
+                op.validate(19);  
+            }catch(Exception e){System.out.println(e);}  
+            System.out.println("calling validate again...");  
+              
+            try{  
+                op.validate(11);  
+            }catch(Exception e){System.out.println(e);}  
+        }  
+    }  
+
+******************************
+
+Spring AOP AspectJ Xml Configuration
+-------------------------------------------
+Spring enables you to define the aspects, advices and pointcuts in xml file.
+
+
+    aop:before It is applied before calling the actual business logic method.
+    aop:after It is applied after calling the actual business logic method.
+    aop:after-returning it is applied after calling the actual business logic method. It can be used to intercept the return value in advice.
+    aop:around It is applied before and after calling the actual business logic method.
+    aop:after-throwing It is applied if actual business logic method throws exception.
+
+
+1) aop:before Example
+
+The AspectJ Before Advice is applied before the actual business logic method. You can perform any operation here such as conversion, authentication etc.
+
+Create a class that contains actual business logic.
+File: Operation.java
+
+    package com.javatpoint;  
+    public  class Operation{  
+        public void msg(){System.out.println("msg method invoked");}  
+        public int m(){System.out.println("m method invoked");return 2;}  
+        public int k(){System.out.println("k method invoked");return 3;}  
+    }  
+
+Now, create the aspect class that contains before advice.
+File: TrackOperation.java
+
+    package com.javatpoint;  
+    import org.aspectj.lang.JoinPoint;  
+    public class TrackOperation{  
+        public void myadvice(JoinPoint jp)//it is advice  
+        {  
+            System.out.println("additional concern");  
+            //System.out.println("Method Signature: "  + jp.getSignature());  
+        }  
+    }  
+
+Now create the applicationContext.xml file that defines beans.
+File: applicationContext.xml
+
+    <?xml version="1.0" encoding="UTF-8"?>  
+    <beans xmlns="http://www.springframework.org/schema/beans"  
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   
+        xmlns:aop="http://www.springframework.org/schema/aop"  
+        xsi:schemaLocation="http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd   
+        http://www.springframework.org/schema/aop   
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">  
+      
+    <aop:aspectj-autoproxy />  
+      
+    <bean id="opBean" class="com.javatpoint.Operation">   </bean>  
+    <bean id="trackAspect" class="com.javatpoint.TrackOperation"></bean>  
+              
+    <aop:config>  
+      <aop:aspect id="myaspect" ref="trackAspect" >  
+         <!-- @Before -->  
+         <aop:pointcut id="pointCutBefore"   expression="execution(* com.javatpoint.Operation.*(..))" />  
+         <aop:before method="myadvice" pointcut-ref="pointCutBefore" />  
+      </aop:aspect>  
+    </aop:config>  
+          
+    </beans>  
+
+Now, let's call the actual method.
+File: Test.java
+
+    package com.javatpoint;  
+      
+    import org.springframework.context.ApplicationContext;  
+    import org.springframework.context.support.ClassPathXmlApplicationContext;  
+    public class Test{  
+        public static void main(String[] args){  
+            ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");  
+            Operation e = (Operation) context.getBean("opBean");  
+            System.out.println("calling msg...");  
+            e.msg();  
+            System.out.println("calling m...");  
+            e.m();  
+            System.out.println("calling k...");  
+            e.k();  
+        }  
+    }  
+
+
+
+
+2) aop:after example
+
+The AspectJ after advice is applied after calling the actual business logic methods. It can be used to maintain log, security, notification etc.
+
+Here, We are assuming that Operation.java, TrackOperation.java and Test.java files are same as given in aop:before example.
+
+Now create the applicationContext.xml file that defines beans.
+File: applicationContext.xml
+
+    <?xml version="1.0" encoding="UTF-8"?>  
+    <beans xmlns="http://www.springframework.org/schema/beans"  
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   
+        xmlns:aop="http://www.springframework.org/schema/aop"  
+        xsi:schemaLocation="http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd   
+        http://www.springframework.org/schema/aop   
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">  
+      
+    <aop:aspectj-autoproxy />  
+      
+    <bean id="opBean" class="com.javatpoint.Operation">   </bean>  
+    <bean id="trackAspect" class="com.javatpoint.TrackOperation"></bean>  
+              
+    <aop:config>  
+      <aop:aspect id="myaspect" ref="trackAspect" >  
+         <!-- @After -->  
+         <aop:pointcut id="pointCutAfter"    expression="execution(* com.javatpoint.Operation.*(..))" />  
+         <aop:after method="myadvice" pointcut-ref="pointCutAfter" />  
+      </aop:aspect>  
+    </aop:config>  
+          
+    </beans>  
+
+
+3) aop:after-returning example
+
+By using after returning advice, we can get the result in the advice.
+
+Create the class that contains business logic.
+File: Operation.java
+
+    package com.javatpoint;  
+    public  class Operation{  
+        public int m(){System.out.println("m() method invoked");return 2;}  
+        public int k(){System.out.println("k() method invoked");return 3;}  
+    }  
+
+Create the aspect class that contains after returning advice.
+File: TrackOperation.java
+
+    package com.javatpoint;  
+      
+    import org.aspectj.lang.JoinPoint;  
+      
+    public class TrackOperation{  
+        public void myadvice(JoinPoint jp,Object result)//it is advice (after advice)  
+        {  
+            System.out.println("additional concern");  
+            System.out.println("Method Signature: "  + jp.getSignature());  
+            System.out.println("Result in advice: "+result);  
+            System.out.println("end of after returning advice...");  
+        }  
+    }  
+
+File: applicationContext.xml
+
+    <?xml version="1.0" encoding="UTF-8"?>  
+    <beans xmlns="http://www.springframework.org/schema/beans"  
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   
+        xmlns:aop="http://www.springframework.org/schema/aop"  
+        xsi:schemaLocation="http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd   
+        http://www.springframework.org/schema/aop   
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">  
+      
+    <aop:aspectj-autoproxy />  
+      
+    <bean id="opBean" class="com.javatpoint.Operation">   </bean>  
+          
+    <bean id="trackAspect" class="com.javatpoint.TrackOperation"></bean>  
+              
+    <aop:config>  
+      <aop:aspect id="myaspect" ref="trackAspect" >  
+         <!-- @AfterReturning -->  
+         <aop:pointcut id="pointCutAfterReturning"   expression="execution(* com.javatpoint.Operation.*(..))" />  
+         <aop:after-returning method="myadvice" returning="result" pointcut-ref="pointCutAfterReturning" />  
+      </aop:aspect>  
+    </aop:config>  
+          
+    </beans>  
+
+File: Test.java
+
+Now create the Test class that calls the actual methods.
+
+    package com.javatpoint;  
+      
+    import org.springframework.context.ApplicationContext;  
+    import org.springframework.context.support.ClassPathXmlApplicationContext;  
+    public class Test{  
+        public static void main(String[] args){  
+            ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");  
+            Operation e = (Operation) context.getBean("opBean");  
+            System.out.println("calling m...");  
+            System.out.println(e.m());  
+            System.out.println("calling k...");  
+            System.out.println(e.k());  
+        }  
+    }  
+
+
+4) aop:around example
+
+The AspectJ around advice is applied before and after calling the actual business logic methods.
+
+Create a class that contains actual business logic.
+File: Operation.java
+
+    package com.javatpoint;  
+    public  class Operation{  
+        public void msg(){System.out.println("msg() is invoked");}  
+        public void display(){System.out.println("display() is invoked");}  
+    }  
+
+Create the aspect class that contains around advice.
+
+You need to pass the PreceedingJoinPoint reference in the advice method, so that we can proceed the request by calling the proceed() method.
+File: TrackOperation.java
+
+    package com.javatpoint;  
+    import org.aspectj.lang.ProceedingJoinPoint;  
+    public class TrackOperation  
+    {  
+        public Object myadvice(ProceedingJoinPoint pjp) throws Throwable   
+        {  
+            System.out.println("Additional Concern Before calling actual method");  
+            Object obj=pjp.proceed();  
+            System.out.println("Additional Concern After calling actual method");  
+            return obj;  
+        }  
+    }  
+
+File: applicationContext.xml
+
+    <?xml version="1.0" encoding="UTF-8"?>  
+    <beans xmlns="http://www.springframework.org/schema/beans"  
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   
+        xmlns:aop="http://www.springframework.org/schema/aop"  
+        xsi:schemaLocation="http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd   
+        http://www.springframework.org/schema/aop   
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">  
+      
+    <aop:aspectj-autoproxy />  
+      
+    <bean id="opBean" class="com.javatpoint.Operation">   </bean>  
+          
+    <bean id="trackAspect" class="com.javatpoint.TrackOperation"></bean>  
+              
+    <aop:config>  
+      <aop:aspect id="myaspect" ref="trackAspect" >  
+         <!-- @Around -->  
+         <aop:pointcut id="pointCutAround"   expression="execution(* com.javatpoint.Operation.*(..))" />  
+         <aop:around method="myadvice" pointcut-ref="pointCutAround" />  
+      </aop:aspect>  
+    </aop:config>  
+          
+    </beans>  
+
+File: Test.java
+
+Now create the Test class that calls the actual methods.
+
+    package com.javatpoint;  
+    import org.springframework.context.ApplicationContext;  
+    import org.springframework.context.support.ClassPathXmlApplicationContext;  
+    public class Test{  
+        public static void main(String[] args){  
+            ApplicationContext context = new classPathXmlApplicationContext("applicationContext.xml");  
+              
+            Operation op = (Operation) context.getBean("opBean");  
+            op.msg();  
+            op.display();  
+        }  
+    }  
+
+5) aop:after-throwing example
+
+By using after throwing advice, we can print the exception in the TrackOperation class. Let's see the example of AspectJ AfterThrowing advice.
+
+Create the class that contains business logic.
+File: Operation.java
+
+    package com.javatpoint;  
+    public  class Operation{  
+        public void validate(int age)throws Exception{  
+        if(age<18){  
+            throw new ArithmeticException("Not valid age");  
+        }  
+        else{  
+            System.out.println("Thanks for vote");  
+        }  
+        }  
+          
+    }  
+
+Create the aspect class that contains after throwing advice.
+
+Here, we need to pass the Throwable reference also, so that we can intercept the exception here.
+File: TrackOperation.java
+
+    package com.javatpoint;  
+    import org.aspectj.lang.JoinPoint;  
+    public class TrackOperation{  
+                        
+        public void myadvice(JoinPoint jp,Throwable error)//it is advice  
+        {  
+            System.out.println("additional concern");  
+            System.out.println("Method Signature: "  + jp.getSignature());  
+            System.out.println("Exception is: "+error);  
+            System.out.println("end of after throwing advice...");  
+        }  
+    }  
+
+File: applicationContext.xml
+
+    <?xml version="1.0" encoding="UTF-8"?>  
+    <beans xmlns="http://www.springframework.org/schema/beans"  
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   
+        xmlns:aop="http://www.springframework.org/schema/aop"  
+        xsi:schemaLocation="http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd   
+        http://www.springframework.org/schema/aop   
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">  
+    <aop:aspectj-autoproxy />  
+    <bean id="opBean" class="com.javatpoint.Operation">   </bean>  
+    <bean id="trackAspect" class="com.javatpoint.TrackOperation"></bean>  
+              
+    <aop:config>  
+      <aop:aspect id="myaspect" ref="trackAspect" >  
+         <!-- @AfterThrowing -->  
+         <aop:pointcut id="pointCutAfterThrowing"    expression="execution(* com.javatpoint.Operation.*(..))" />  
+         <aop:after-throwing method="myadvice" throwing="error" pointcut-ref="pointCutAfterThrowing" />  
+      </aop:aspect>  
+    </aop:config>  
+          
+    </beans>  
+
+File: Test.java
+
+Now create the Test class that calls the actual methods.
+
+    package com.javatpoint;  
+      
+    import org.springframework.context.ApplicationContext;  
+    import org.springframework.context.support.ClassPathXmlApplicationContext;  
+    public class Test{  
+        public static void main(String[] args){  
+            ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");  
+            Operation op = (Operation) context.getBean("opBean");  
+            System.out.println("calling validate...");  
+            try{  
+                op.validate(19);  
+            }catch(Exception e){System.out.println(e);}  
+            System.out.println("calling validate again...");  
+              
+            try{  
+                op.validate(11);  
+            }catch(Exception e){System.out.println(e);}  
+        }  
+    }  
+
+
+===================================================================================
+
+Spring AOP
+
+AOP Introduction
+AOP Terminology
+ Aspect
+ Advice
+ JoinPoint
+ Weaving
+ Target
+ Proxy
+
+Types of Advices
+  Before Advice
+  After Returning Advice
+  Around Advice
+  Throws Advice
+
+Static Pointcut
+Dynamic Pointcut
+
+
+AOP stands for Aspect Oriented Programming
+Spring framework provided AOP module which is used to separate cross cutting logics in application
+
+What is Cross Cutting Logic?
+ A project is a set of classes
+ classes contains logic to perform operations
+ in class we will write two types of logics
+   1) Business logic
+   2) cross cutting logic
+
+Ex:
+public class ReportGenerator{
+  //- to generate a report in Excel
+  public void generateExcelReport(){
+      //logic to generate excel report  is the business logic
+  }
+}
+ 
+for client - we will create a UI page and will provide a button with "Click here for Excel Report"
+
+When client click on button - application class will execute and it will generate data in excel sheet
+
+business logic is responsible to meet client's requirement
+business logic is also called as Primary Logic - which is required to meet the clients requirement
+
+
+suppose later an issue occurs in generating report- how can we track it
+we need to make some changes in the code to understand what all things happend
+
+
+public class ReportGenerator{
+ 
+  public void generateExcelReport(){
+      //logging (cross cutting logic)
+      //logic to generate excel report (business logic)
+      //logging (cross cutting logic)
+  }
+-- another requirement - some clients wants pdf report
+  public void generatePdfReport(){
+      //logging (cross cutting logic)
+      //logic to generate pdf report (business logic)
+      //logging (cross cutting logic)
+  }
+}
+
+
+-- our application contains business logic and cross cutting logic which are combined in each method
+-- like logging , we need to implement auditing, security, connection etc with business loigc
+-- cross cutting logics will help in executing  the business logic in a better and proper manner
+
+-> business logics are mandatory where as cross cutting logics are optional
+
+
+-> If we develop methods by combining business logic and cross cutting logic , it will create tightly coupling problem
+  -> if we modify business logic, cross cutting logic may affect
+  -> if we modify cross cutting logic, business logic may affect
+
+-> to avoid this problem we have to separate business logic and cross-cutting logic in our application
+
+suppose if we want to make some changes in logging , which is available in multiple methods in multiple classes; will be an issue
+
+we need to separte the cross logic and business logic
+
+class ReportGenerator		class LogUtil
+  excelReport()			   logMessage()
+  pdfReport()
+
+
+before executing excelReport() call logMessage() method of LogUtil class
+after executing excelReport() call logMessage() method of LogUtil class
+
+before executing pdfReport() call logMessage() method of LogUtil class
+after executing pdfReport() call logMessage() method of LogUtil class
+
+-- still tightly coupling is there - collaboration
+
+-> To separate business logics and cross cutting logics - Spring framework provided AOP module
+
+
+Business Class         Secondary Component
+
+               Spring AOP   (we will give Business C;ass component  and Secondar component )
+
+Spring AOP will ake care of integrating business logic with secondary logic  component in runtime and will execute it
+
+secondary logic can be logging, auditing, transactions, security, exception handling
+
+
+
+AOP Terminologies
+
+1) Aspect - the class which contains secondary logic (cross cutting logic)
+      an application can have multiple aspects like LoggingAspect, AuditingAspect, SecurityAspect, TxAspect, ExceptionHandlingAspect etc
+
+2) Advice - it represents when Aspect logic should execute
+
+public int add(int a, int b) (a business component)
+{   
+   int sum = a + b;
+   return sum;
+}
+
+public LogUtils (Aspect) 
+{
+  public void log(){
+    //log logic
+  }
+}
+
+when the log() method (secondary logic) should execute -before, after, , around or when an exception occurs
+
+ a) Before Advice - will execute after business logic execution
+ b) After Returning Advice - will execute after business logic
+ c) Around Advice - will execute before and after business logic
+ d) Throws Advice - will execute when exception occurs in business logic
+
+
+3) Target - the class which contains the business logic is called as target
+
+4) JoinPoint - it represents where secondary logic should integrate with the primary logic
+      Spring AOP supports method level joinpoint
+
+5) Pointcut - it represents for which business methods secondary logic should be applied
+
+class Demo{ Target class
+  public void m1(){}
+  public void m2(){}
+  public void m3(){}
+  public void m4(){}
+  public void m5(){}
+}  - we want to apply secondary logic only for m1 and m2
+
+class LoggingAspect{  Aspect class
+  
+}
+
+Note: bydefault aspect logic is applicable for all methods available in target
+
+6) Weaving - the process of combining Target and Aspect is called as Weaving
+
+7) Proxy - weaving will generate one new class by combining Target and Aspect and that class is called as Proxy class. Spring AOP will execute Proxy class in runtime
+
+
+
+
+====================================================================================
+
+@Service
+public class ReportGenerator {
+	public void generateExcelReport() {		
+		System.out.println("\033[32mlogic to generate excel report!!! \033[0m");
+
+	}
+
+	public boolean generateExcelReport(String fileName) {		
+		System.out.println("\033[32mlogic to generate excel report with custom file name!!!\033[0m");
+		return new Random().nextBoolean();
+	}
+	
+	public void generateExcelReport(String fileName, String fileType) {		
+		System.out.println("\033[32mlogic to generate excel report with custom file type and name!!!\033[0m");
+	}
+	
+	public void generatePdfReport() {
+		System.out.println("\033[32mlogic to generate pdf report!!\033[0m");
+	}
+}
+
+
+@Service
+public class PasswordValidator {
+  public boolean validatePassword(String pass) {
+	  System.out.println("\033[32mlogic to validate password \033[0m");
+	  int length = pass.trim().length();
+	  if(length >= 5)
+		  return true;
+	  else {
+		  throw new RuntimeException("password should be >= 5 length");
+		  //return false;
+	  }
+  }
+}
+
+
+
+@Configuration
+@Aspect
+public class LoggingAspect {
+	//WHEN - what type of method calls to be intercepted - through pointcut expression
+	//@Before("execution(boolean com.wipro.aop.services.*.*(..))")
+	//@Before("execution(* com.wipro.aop.services.*.*())") //methods without params
+	@Before("execution(* com.wipro.aop.services.*.*(..))") 
+	//@Before("execution(* com.wipro.aop.services.*.generatePdf*(..))")
+	public void logBeforeMethodCall(JoinPoint joinPoint) {
+		//WHAT -- logic
+		System.out.println("Starting Execution of  - \"" + joinPoint.getSignature().getName() + "()\" - with " + joinPoint.getArgs().length + " parameters");
+	}
+	
+	@AfterReturning(pointcut = "execution(* com.wipro.aop.services.*.*(..))", returning = "returnValue") 
+	//@AfterReturning(pointcut = "execution(* com.wipro.aop.services.*.*Pdf*(..))", returning = "returnValue") 
+	public void logAfterSuccessfulMethodCall(JoinPoint joinPoint, Object returnValue) {
+		System.out.println("Execution Completed for \"" + joinPoint.getSignature().getName() + "()\" with "+ joinPoint.getArgs().length + " arguments and returns - "+ returnValue);
+	}
+	
+	@After("execution(* com.wipro.aop.services.*.*(..))")
+	public void logAfterMethodCall(JoinPoint joinPoint) {
+		System.out.println("After Aspect - \"" + joinPoint.getSignature().getName() +"()\" has executed");
+	}	
+	
+	@AfterThrowing(pointcut = "execution(* com.wipro.aop.services.*.*(..))", throwing = "ex" )
+	public void logMethodCallAfterException(JoinPoint joinPoint, Exception ex) {
+		System.out.println(joinPoint.getSignature().getName()+"() fired an exception -> " + ex.toString());
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
