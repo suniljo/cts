@@ -1,0 +1,389 @@
+Dependencies
+1. Spring Data Jpa
+2. Spring Web
+3. Spring Security
+4. MySQL
+5. Lombok
+
+-- application.properties ---
+
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.url=jdbc:mysql://localhost:3306/db_capgemini
+spring.datasource.username=root
+spring.datasource.password=root
+
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
+
+
+---- MyUser.java ---
+@Entity
+@Data
+@Table(name = "USER_DTLS")
+public class MyUser {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+    private String username;
+    private String password;
+    private String role; //Eg: ADMIN,USER
+}
+
+--- MyUserRepository.java ----
+public interface MyUserRepository extends JpaRepository<MyUser, Long> {
+    Optional<MyUser> findByUsername(String username);
+}
+
+
+--- MyUserDetailsService.java ---
+@Service
+public class MyUserDetailService implements UserDetailsService {
+
+    @Autowired
+    private MyUserRepository repository;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Optional<MyUser> user = repository.findByUsername(username);
+        if (user.isPresent()) {
+            var userObj = user.get();
+            return User.builder()
+                    .username(userObj.getUsername())
+                    .password(userObj.getPassword())
+                    .roles(getRoles(userObj))
+                    .build();
+        } else {
+            throw new UsernameNotFoundException(username);
+        }
+    }
+
+    private String[] getRoles(MyUser user) {
+        if (user.getRole() == null) {
+            return new String[]{"USER"};
+        }
+        return user.getRole().split(",");
+    }
+}
+
+
+--- ContentController.java ----
+@RestController
+public class ContentController {
+
+    @GetMapping("/home")
+    public String handleWelcome() {
+        return "Welcome to home!";
+    }
+
+    @GetMapping("/admin/home")
+    public String handleAdminHome() {
+        return "Welcome to ADMIN home!";
+    }
+
+    @GetMapping("/user/home")
+    public String handleUserHome() {
+        return "Welcome to USER home!";
+    }    
+}
+
+
+--- SecurityConfiguration.java ---
+@Configuration
+@EnableWebSecurity
+public class SecurityConfiguration {
+
+    @Autowired
+    private MyUserDetailService userDetailService;
+    
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        return httpSecurity
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(registry -> {
+                    registry.requestMatchers("/home", "/register/**", "/authenticate").permitAll();
+                    registry.requestMatchers("/admin/**").hasRole("ADMIN");
+                    registry.requestMatchers("/user/**").hasRole("USER");
+                    registry.anyRequest().authenticated();
+                })
+                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
+                
+                .build();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return userDetailService;
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+
+--- RegistrationController.java ----
+@RestController
+public class RegistrationController {
+
+    @Autowired
+    private MyUserRepository myUserRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @PostMapping("/register/user")
+    public MyUser createUser(@RequestBody MyUser user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return myUserRepository.save(user);
+    }
+}
+
+
+===> create/ generate a new JWT <===
+
+- when the user makes the login using the username and password - we have to validate the username and password - then generate a JWT and return the token back to user
+
+Dependencies:
+ 1. JJWT::Impl  - jjwt-impl
+ 2. JJWT::API   - jjwt-api
+ 3. JJWT::Extensions::Jackson - jjwt-jackson
+
+
+==> create the service class to manage the JWT Operations - issuing a JWT token, validating the token etc
+
+--- webtoken/JwtService.java ----
+1. provide the secret key which is used for creating/generating JWT and also to validate the JWT
+src/test/java/JwtSecretMaker.java
+
+package com.capgemini.jwt;
+public class JwtSecretMakerTest{
+ @Test
+ public void generateSecretKey(){
+   SecretKey key = Jwts.SIG.HS512.key().build();
+   String encodedKey = DatatypeConverter.printHexBinary(key.getEncoded());
+  System.out.println(encodedKey);
+ }
+}
+
+
+- Run the test case and get the secret key in JwtService.java
+
+private static final String SECRET = "<copied key>"
+
+-> generate a token
+private static final long VALIDITY = TimeUnit.MINUTES.toMillis(30);
+
+   public String generateToken(UserDetails userDetails) {
+        return Jwts.builder()               
+                .subject(userDetails.getUsername())
+                .issuedAt(Date.from(Instant.now()))
+                .expiration(Date.from(Instant.now().plusMillis(VALIDITY)))
+                .signWith(generateKey())
+                .compact();
+    }
+
+    private SecretKey generateKey() {
+        byte[] decodedKey = Base64.getDecoder().decode(SECRET);
+        return Keys.hmacShaKeyFor(decodedKey);
+    }
+
+-- to add the claims
+Map<String, String> claims = new HashMap<>();
+claims.put("iss", "https://secure.example.com"); 
+claims.put("name", "Sunil Joseph");
+
+return Jwts.builder()
+	.claims(claims)
+iss --- issuer
+
+
+--> next task is to call the generateToken() method when a login is requested - or a special endpoint for generating the JWT token is called - we need to call this function
+
+-- LoginForm.java --
+public record LoginForm (String username, String password) {
+}
+
+
+AuthenticationManager - will help us to authenticate a user by username and password
+
+
+-- ContentContoller.java --
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private MyUserDetailService myUserDetailService;
+
+    
+   @PostMapping("/authenticate")
+    public String authenticateAndGetToken(@RequestBody LoginForm loginForm) {
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                loginForm.username(), loginForm.password()
+        ));
+        if (authentication.isAuthenticated()) {
+            return jwtService.generateToken(myUserDetailService.loadUserByUsername(loginForm.username()));
+        } else {
+            throw new UsernameNotFoundException("Invalid credentials");
+        }
+    }
+
+
+
+in SecurityConfiguration.java
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        return new ProviderManager(authenticationProvider());
+    }
+
+
+--- run the application and create 2 users
+POST http://localhost:8080/register/user 
+
+{
+ "username":"admin",
+ "password":"12345",
+ "role":"ADMIN"
+}
+
+{
+ "username":"user",
+ "password":"12345",
+ "role":"USER"
+}
+
+
+--> generate the JWT
+POST http://localhost:8080/authenticate
+{
+ "username": "user",
+ "password":"12345"
+}
+
+JWT token will be returned as a response which will be used for used for accessing the secured endpoints
+
+jwt.io <===
+
+--- task 1 completed ---
+
+
+===> validate the token and allow access to the endpoints - Authorization with JWT
+
+GET http://localhost:8080/home  --- accessible to everyone
+GET http://localhost:8080/admin/home
+GET http://localhost:8080/user/home
+
+Authorization: Bearer <JWT>
+
+==> to process the Authorization request header to do the Authentication and Authorization in our application
+
+1. create a new filter option that will gets executed for every request - OncePerRequestFilter
+
+--- JwtAuthenticationFilter.java ---
+
+@Configuration
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+      @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String jwt = authHeader.substring(7);
+        String username = jwtService.extractUsername(jwt);
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = myUserDetailService.loadUserByUsername(username);
+            if (userDetails != null && jwtService.isTokenValid(jwt)) {
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                        username,
+                        userDetails.getPassword(),
+                        userDetails.getAuthorities()
+                );
+                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private MyUserDetailService myUserDetailService;
+}
+
+
+
+in JwtService.java
+
+   public String extractUsername(String jwt) {
+        Claims claims = getClaims(jwt);
+        return claims.getSubject();
+    }
+
+    private Claims getClaims(String jwt) {
+        return Jwts.parser()
+                 .verifyWith(generateKey())
+                 .build()
+                 .parseSignedClaims(jwt)
+                 .getPayload();
+    }
+
+    public boolean isTokenValid(String jwt) {
+        Claims claims = getClaims(jwt);
+        return claims.getExpiration().after(Date.from(Instant.now()));
+    }
+
+
+
+in SecurityConfiguration.java
+
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        return httpSecurity
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(registry -> {
+                    registry.requestMatchers("/home", "/register/**", "/authenticate").permitAll();
+                    registry.requestMatchers("/admin/**").hasRole("ADMIN");
+                    registry.requestMatchers("/user/**").hasRole("USER");
+                    registry.anyRequest().authenticated();
+                })
+                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+
+===> run the application and do testing
+
+Google "Signing Algorithms Comparison" - comparison of signing algorithms
+
+
+
+
+
+
+
+
