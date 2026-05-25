@@ -1,0 +1,366 @@
+================
+SOLID PRINCIPLES
+================
+
+The SOLID principles are five key design guidelines in object-oriented programming intended to create more maintainable, flexible, scalable, and understandable software. 
+
+When applied in Java, they help developers avoid code rot and promote loose coupling.
+
+
+-> Single Responsibility Principle
+-> Open-Closed Principle
+-> Liskov Substitution Principle
+-> Interface Segregation Principle
+-> Dependency Inversion Principle
+
+
+1. Single Responsibility Principle
+
+The Single Responsibility Principle states that every class must perform a single functionality. Implementation of multiple functionalities in a single class mashup the code
+
+Example: Requirement: BankService
+
+class BankService
+  deposit(float amt, String acNo){}
+  withdraw(float amt, String acNo){}
+  printPassBook(){}
+  getLoanInterestInfo(Strng loanType){}
+  sendOTP(String medium){}
+
+-- here the class has multiple reason to change
+
+public void getLoanInterestInfo(String loanType){
+  if(loanType.equals("personalloan"){
+    //do some job
+  }
+  if(loanType.equals("homeloan"){
+    //do some job
+  }
+  if(loanType.equals("carloan"){
+    //do some job
+  }
+}
+
+in future if this Bank needs to support GoldLoan or Education loan -- we need to modify this class
+
+similarly
+
+public void sendOTP(String medium){
+  if(medium.equals("email"){
+    //write email related logic
+    //use JavaMailSender API
+  }
+}
+
+in future if this Bank needs to support sending OTP to phone or whatsapp -- we need to modify this class
+
+Note: this class is not following Single Responsibility Principle - because this class have got too many responsibilities or tasks to perform
+
+To achieve the goal of Single Responsibility Principle - we should implement a separate class that perform a single functionality only
+
+class PrintPassBookService  -- printPassBook(){}
+class LoanService -- getLoanInterestInfo(String loanType) 
+class NotificationService -- sendOTP(String medium)
+class BankService -- deposit(String acno, float amt) {}
+		  -- withdraw(String acno, float amt) {}
+
+
+
+2. Open-Closed Principle
+
+The Open-Closed Principle states that according to new requirements the module (software entities like classes, modules and functions) should be open for extension but closed for modification - which means we should be able to extend a class behaviour without modifying it
+
+
+-- NotificationService --
+public class NotificationService {
+	public void sendOTP(String medium) {
+		if(medium.equalsIgnoreCase("mobile")) {
+			System.out.println("sending OTP to mobile");			
+			//write mobile related logic - use Twilio API
+		}
+		else if(medium.equalsIgnoreCase("email")) {
+			System.out.println("sending OTP to email");
+			//write email related logic - use JavaMailSender API
+		}
+	}
+}
+
+-- at present we got only 2 features - send OTP to email or to Mobile as SMS
+-- later this NotificationService needs to implement sending OTP to WhatsApp - and that feature is not supported at present- in that case we should not modify this existing code - its not recommended to modify NotificationService for each OTP Service
+
+Solution:
+
+public interface NotificationService {
+	public void sendOTP(String medium);
+}
+
+public class EmailNotificationService implements NotificationService {
+
+	@Override
+	public void sendOTP(String medium) {
+		System.out.println("logic to send OTP to email");
+	//write logic to integrate with Email API
+	}
+}
+
+
+public class MobileNotificationService implements NotificationService {
+
+	@Override
+	public void sendOTP(String medium) {
+		System.out.println("logic to send OTP to mobile");
+          //write logic to integrate with Twilio API
+
+	}
+
+}
+
+
+public class WhatsAppNotifiationService implements NotificationService {
+
+	@Override
+	public void sendOTP(String medium) {
+		System.out.println("logic to send OTP to Whatsapp");
+	 //write logic to integrate with Whatsapp API
+	}
+}
+
+
+--later Facebook notification can be done 
+
+
+
+
+3. Liskov Principle (LSP)
+
+--> It applies to inheritance in such a way that the derived classes must be completely substitutable for their base/ parent classes.
+In other words, if class A is a subtype of class B, then we should be able to replace class B with class A without interrupting the behaviour of the program
+
+public abstract class SocialMedia{
+
+  //supports WhatsApp, Facebook, Instagram
+  public abstract void chatWithFriends();
+
+  //supports Facebook, Instagram
+  public abstract void publishPost(Object post); 
+
+  //supports WhatsApp, Facebook, Instagram
+  public abstract void sendPhotosAndVideos();
+
+  //supports WhatsApp, Facebook
+  public abstract void groupVideoCall(String... users);
+}
+
+-- this class supports all social media activities
+
+
+class Facebook extends SocialMedia{
+  //define all media
+}
+
+-- here Facebook is a substitute of SocialMedia
+-- SocialMedia can be replaced with Facebook
+
+
+class WhatsApp extends SocialMedia{
+  //define all the methods
+  public void publishPost(Object post){
+    //not available for WhatsApp   
+  }
+}
+
+-- here WhatsApp cannot be substituted with SocialMedia - because it has got some un-supported feature
+-- it is not supporting Liskov Substitution Principle
+
+
+
+class Instagram extends SocialMedia{
+ //override all methods
+ public void groupVideoCall(String... users){
+   //not available for Instagram
+ }
+}
+-- it is not supporting Liskov Substitution Principle
+
+
+How to overcome this? or How we can design our code in such a way that it follows LSP?
+
+1) define an interface
+
+public interface SocialMedia {
+   //common features of all SocialMedias
+   public void chatWithFriends();
+   public void sendPhotosAndVideos();
+}
+
+
+public interface VedioCallManager {
+  public void groupVideoCall(String... users); 
+}
+
+
+public interface PostMediaManager {
+  public void publishPost(Object post);	
+}
+
+
+
+public class Facebook implements SocialMedia, VedioCallManager, PostMediaManager{}
+
+public class Instagram implements SocialMedia, PostMediaManager{}
+
+public class WhatsApp implements SocialMedia, VedioCallManager{}
+
+
+-- here child class is the substitute of its parents
+
+
+4. Interface Segregation Principle (ISP)
+
+--> This principle states that - do not force any client to implement an interface which is irrelevant to them.
+
+--> This principle states that the larger interfaces split into smaller ones. Because the implementation classes use only the methods that are required.
+We should not force the client to use the methods that they do not want to use
+
+--> The goal of the interface segregation principle is similar to the Single Responsibility Principle.
+
+
+public interface UPIPayments{
+ public void payMoney();
+ public void getScratchCard();
+ public void getCashBackAsCreditBalance();
+}
+
+
+class GooglePay implements UPIPayments{
+  //override all methods
+}
+
+class Paytm implements UPIPayments{
+  //override all methods
+
+  public void getCashBackAsCreditBalance(){
+    //this feature is not applicable for Paytm
+   //as a Client - Paytm is forced to implement the interface and override this method - violates the contract of Interface Segregation Principle
+  }
+}
+
+
+class PhonePay implements UPIPayments{
+  //override all methods
+  public void getCashBackAsCreditBalance(){
+    //this feature is not applicable for Phonepay
+   //as a Client - Phonepay is forced to implement the interface and override this method - violates the contract of Interface Segregation Principle
+  }
+}
+
+-- this is not a good way to design the code
+==> Solution with ISP
+
+public interface UPIPayments {
+  public void payMoney();
+  public void getScratchCard();	
+}
+
+public interface CashBackManager {
+  public void getCashBackAsCreditBalance();
+}
+
+
+public class GooglePay implements UPIPayments, CashBackManager {}
+
+
+public class Paytm implements UPIPayments {}
+
+public class PhonePay implements UPIPayments {}
+
+
+
+
+5. Dependency Inversion Principle (DIP)
+
+--> This principle states that we must use abstraction (abstract class and interfaces) instead of concrete implementations. 
+
+--> High level modules should not depend on the low-level module but both should depend on the abstraction
+
+
+public class CreditCard{
+  public void doTransaction(long amount) {
+    System.out.println("paying using Credit Card");
+  }
+}
+
+
+public class DebitCard{
+  public void doTransaction(long amount) {
+    System.out.println("paying using Debit Card");
+  }
+}
+
+
+class ShoppingMall{
+  private DebitCard debitCard;
+
+  public ShoppingMall(DebitCard dc){
+    this.debitCard = dc
+  }
+
+  public void doPurchaseSomething(long amount){
+    debitCard.doTransaction(amount);
+  }
+
+  public static void main(String[] args){
+    DebitCard dc = new DebitCard();
+    ShoppingMall shoppingMall = new ShoppingMall(dc);
+
+    shoppingMall.doPurchaseSomething(5000L);
+  }
+}
+
+-- here ShoppingMall is tightly coupled with DebitCard
+-- suppose DebitCard payment is not happening - we need to do the payment with CreditCard
+-- we need to make lot of changes to convert payment through CreditCard
+
+
+===> Solution
+
+public interface BankCard {
+  public void doTransaction(long amount);
+}
+
+public class CreditCard implements BankCard {
+ public void doTransaction(long amount) {
+	 System.out.println("paying using Credit Card");
+ }
+}
+
+
+public class DebitCard implements BankCard {
+	 public void doTransaction(long amount) {
+		 System.out.println("paying using Debit Card");
+	 }
+}
+
+
+
+public class ShoppingMall {
+	private BankCard card;
+	
+	public ShoppingMall(BankCard card) {
+		this.card = card;
+	}
+	
+	public void doPayment(long amount) {
+		card.doTransaction(amount);
+	}
+	public static void main(String[] args) {
+		//DebitCard dCard = new DebitCard();	
+		//CreditCard dCard = new CreditCard();
+		
+		BankCard bankcard = new CreditCard() / new DebitCard();
+
+		ShoppingMall mall = new ShoppingMall(bankCard);
+		mall.doPayment(2500L);
+	}
+}
+

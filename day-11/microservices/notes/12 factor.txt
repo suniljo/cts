@@ -1,0 +1,143 @@
+=============================================================
+Development Principles of Cloud Native - 12-factors & Beyond 
+=============================================================
+12factor.net
+
+The 12-Factor methodology is a set of best practices for building scalable, resilient, and portable microservices for the cloud.
+
+
+How to get succeeded in building Cloud Native Apps & What are the guiding principles that can be considered for the same?
+
+Ans: The Engineering Team at Heroku cloud platform introduced the 12-Factor methodology- a set of development principles aimed at guiding the design and construction of cloud-native applications. 
+These principles are the result of their expertise and provide valuable insights for building web applications with specific characteristics.
+
+when we follow these 12 factor methodology - our applications will have the following advantages
+==> Ready for Cloud Platform Deployment - applications designed to be seamlessly deployed on various cloud platforms.
+==> Scalability as a core attribute - architecture that inherently support scalability
+==> System Portability - applications that can run across different systems and environments
+==> Enabling Continuous Deployment and Agility - facilitating rapid and agile development cycles
+
+These principles were developed to assist developers in building effective cloud-native applications.
+
+
+The 12 factors for microservices::
+
+1. Codebase: One codebase in version control, but can be deployed in many instances. 
+2. Dependencies: Explicitly declare and isolate all dependencies. 
+3. Config: Store configuration in the environment, separate from the code. 
+4. Backing Services: Treat backing services (like databases or message queues) as attached resources. 
+5. Build, Release, Run: Strictly separate the build, release, and run stages to ensure consistency. 
+6. Processes: Execute the app as one or more stateless processes, with any state stored externally. 
+7. Port Binding: Export the service via port binding, running independently and self-contained. 
+8. Concurrency: Scale out horizontally by running more instances of the service. 
+9. Disposability: Design services to maximize robustness with fast startup and graceful shutdown. 
+10. Dev/Prod Parity: Keep development, staging, and production environments as similar as possible. 
+11. Logs: Treat logs as an event stream and route them to a central logging service. 
+12. Admin Processes: Run administrative or management tasks (like database migrations) as one-off, separate processes. 
+
+
+ 
+1) One codebase, one application
+2) Dependency Management
+3) Design, build, release, run
+4) Configuration, credentials & code
+5) Logs
+6) Disposability
+7) Backing Services
+8) Environment Parity - Dev/prod parity
+9) Administrative Process
+10) Port Binding
+11) Stateless Processes
+12) Concurrency
+13) API First
+14) Telemetry
+15) Authentication & Authorization
+
+
+1) One codebase for one application   
+ - as per this guideline - we need to make sure that there is one-to-one correspondence between an application and its code base- which means - each application/microservice need to have its own dedicated codebase.
+
+In our case we build 3 microservices - accounts, loans and cards 
+
+Every microservice should have its own GitHub repo or its own code base
+
+If there is any code which is common to multiple microservices - then such common code should be managed separately as a library or can be deployed as a separate standalone service which will serve as a backing service for the other microservices
+
+Configurations requiremets for Dev, QA, Production should be done outside of the codebase - so that configurations can be injected externally during the deployments into your application codebase
+
+
+2) Dependency Management
+
+It is important or crucial to declare all our dependencies needed for our application in a single manifest file and post the we should also ensure that these dependencies are accessible to a dependency manager which can download all of them from a central repository - maven / gradle - pom.xml / build.gradle
+
+by following this approach we maintain a clear and controlled dependency management process for our application. If we are not following pom.xml or build.gradle and if we mannually download and integrate to application with build path - will make our application complex.
+
+
+3) Design, build, release, run
+
+inside this guideline the recommendation is - your codebase has to progress from design to production by following the below stages
+
+ -> Design Stage - determine the technologies, dependencies, and tools for specific application features - also includes development and unit testing
+
+ -> Build Stage - compile and package the codebase with dependencies with unique version id
+
+ -> Release Stage - combine the build with a specific deployment configuration based upon the environment- for production release , production related configurations to be integrated with build
+
+ -> Run stage - we need to run the application in the designated environment using the specific release
+
+- no runtime code modification is allowed at run stage - only use immutable build
+
+
+4) Configuration, Credentials & Code
+
+what is configuration?
+
+according to 15 factor methodology - configuration are the elements that are prone to change between the deployments. If there is a property which is going to differ from one environment to another environment - we call all these type of property or elements as configurations. 
+
+we should never club configurations with our code base; we should have the ability to modify application configurations independently or without a need to rebuild the application for every environment
+
+ex: DB properties, message system properties, credentials for accessing 3rd party APIs etc
+
+github single codebase ---->   docker image  <---  injecting Dev Config or Testing Config or Prod configurations ----> for each environment 
+
+we use spring cloud config server in spring cloud native ecosystem
+
+
+5) Logs
+
+inside a traditional application or a monolythic application - how the logs are handled? application will write the logs to a file in a folder location of our server; if there are any issue comes inside our monolythinc application - developer will go to the log location and find log of a specific date and do necessary corrections in code
+
+but in microservices (100s of microservices) or in a spring cloud native application the above approach is not feasible
+
+as per this methodology it is recommended that all the log routing and storage are not the application's concerns; microservices will not write the logs in any log folder or inside any log location ; instead application will simply redirect their logs to the  standard output treating them as a sequentially ordered events based upon the time. The responsibility of the log storage and rotation is now shifted to an external tool, known as "log aggregator". This tool retrieves, gathers and provides access to the logs for debuggings/ inspection purposes
+
+6) Disposability
+
+inside a traditional monolythic application making sure that a single monolythic application is running with top priority; no room for the application to gets stopped or terminated.
+
+ephemeral - if any microservice is unresponsible we can terminate and can be replaced with a new instance using platforms like Kubernetes automatically. and also in high load time we can spinup with more instances to cater the increased workload
+
+this concept of shutting down and creating new instance automatically is known as application disposability
+
+
+7) Backing Services
+
+your microservices may have dependency on many other external resources like DB, SMTP, FTP Servers, or RESTful Web Services, Caching systems, message brockers - all these are called as backing resources - we should always treat them as attached to the resources that we can modify or replace them without needing to make any changes inside our application.
+
+
+8) Environment Parity
+
+as per this guiding principle - it is recommended to minimize the differences b/w various environments of our application. 
+
+
+9) Administrative Processes
+10) Port Binding
+11) Stateless Process
+12) Concurrency
+13) Telemetry (15 factor methodology)
+14) Authentication & Authorization - Security
+15) API First  - 15 factor methodology
+
+in microservices everything we develop as REST APIs
+
+this methodology recommands you to always adopt and always have a mindset of API first- which means right from the design of cloud native application , we should always think like to write as much as logic as possible with the help of APIs only; so that each of the logic can be invoked by other APIs in other microservices
